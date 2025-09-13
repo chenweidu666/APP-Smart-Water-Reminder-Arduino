@@ -65,6 +65,28 @@ bool bluetoothConnected = false;
 unsigned long lastDataSent = 0;
 const unsigned long CONNECTION_TIMEOUT = 10000;  // 10秒无数据认为断开
 
+// 智能喝水检测状态机
+enum DrinkingState {
+  EMPTY,           // 空杯状态
+  FILLED,          // 满杯状态  
+  DRINKING,        // 喝水状态
+  STABLE           // 稳定状态
+};
+
+// 喝水事件记录
+struct DrinkingEvent {
+  unsigned long timestamp;
+  long waterConsumed;
+};
+
+DrinkingEvent drinkingEvents[10]; // 记录最近10次喝水事件
+byte lastEventIndex = 0; // 记录当前喝水事件的索引
+long totalWaterConsumed = 0; // 累计喝水总量
+
+// 按需发送间隔
+const unsigned long TOTAL_REPORT_INTERVAL = 10000; // 每10秒发送一次总重量
+unsigned long lastTotalReport = 0;
+
 void setup() {
   Serial.begin(9600);
   delay(2000);  // 给HC-08更多启动时间
