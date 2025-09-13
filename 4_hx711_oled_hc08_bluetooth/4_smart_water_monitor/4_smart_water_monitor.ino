@@ -244,6 +244,13 @@ void loop() {
           display.println("Empty");
         }
         
+        // 显示总喝水量
+        if (totalWaterConsumed > 0) {
+          display.print("Total: ");
+          display.print(totalWaterConsumed);
+          display.println("g");
+        }
+        
         display.display();
       }
       
