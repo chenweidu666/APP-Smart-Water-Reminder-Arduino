@@ -8,7 +8,7 @@
     - HC-08蓝牙模块数据传输
     - 串口输出详细信息
     - 重量状态自动判断
-    - 总重量累加功能
+    - LED状态指示（闪烁=不稳定，常亮=稳定）
     - 根据HC-08资料包优化的连接方式
   硬件连接：
     - HX711的SCK连接到Arduino引脚10
@@ -23,6 +23,7 @@
     - HC-08的GND连接到Arduino GND
     - HC-08的TXD连接到Arduino引脚0 (RX)
     - HC-08的RXD连接到Arduino引脚1 (TX)
+    - LED连接到Arduino引脚13 (内置LED)或引脚9
 */
 
 #include <Wire.h>
@@ -31,6 +32,7 @@
 
 #define HX711_SCK 10
 #define HX711_DT 11
+#define STATUS_LED 13  // 使用Arduino内置LED，或连接到引脚9
 
 // OLED屏幕设置
 #define SCREEN_WIDTH 128
@@ -45,14 +47,17 @@ long Weight_Maopi = 0;  // 空载基准值
 #define GapValue 430  // 重量系数，与官方例程一致
 bool oledAvailable = false;  // OLED是否可用
 
-// 总重量累加功能
-long totalWeight = 0;  // 总重量累加
-long lastStableWeight = 0;  // 上次稳定重量
-long currentStableWeight = 0;  // 当前稳定重量
+// 重量稳定性检测
+long lastWeight = 0;  // 上次重量
 bool weightStable = false;  // 重量是否稳定
 unsigned long stableStartTime = 0;  // 稳定开始时间
 const unsigned long STABLE_DURATION = 2000;  // 稳定持续时间2秒
-const long STABLE_THRESHOLD = 3;  // 稳定阈值3g
+const long STABLE_THRESHOLD = 5;  // 稳定阈值5g
+
+// LED闪烁控制
+unsigned long lastLedUpdate = 0;
+const unsigned long LED_BLINK_INTERVAL = 200;  // LED闪烁间隔200ms
+bool ledState = false;
 
 // 蓝牙保护变量 - 1秒发送一次数据
 unsigned long lastDataUpdate = 0;
@@ -76,6 +81,7 @@ void setup() {
   
   pinMode(HX711_SCK, OUTPUT);
   pinMode(HX711_DT, INPUT);
+  pinMode(STATUS_LED, OUTPUT);  // 设置LED引脚为输出
   
   // 初始化I2C
   Wire.begin();
@@ -109,11 +115,12 @@ void setup() {
   Serial.println("=== HX711 + OLED + HC-08程序启动 ===");
   Serial.println("HX711引脚: SCK=10, DT=11");
   Serial.println("HC-08引脚: RX=0, TX=1");
+  Serial.println("状态LED引脚: 13");
   Serial.println("重量系数: 430");
   Serial.println("蓝牙波特率: 9600");
   Serial.println("功能: 重量监控 + OLED显示 + HC-08蓝牙传输");
   Serial.println("显示模式: 实时显示（无缓存）");
-  Serial.println("总重量累加: 启用");
+  Serial.println("LED状态: 闪烁=不稳定，常亮=稳定");
   Serial.println("数据发送频率: 1秒");
   Serial.println("================================");
   
@@ -169,14 +176,8 @@ void loop() {
       // 检查重量稳定性
       checkWeightStability(weightGrams);
       
-      // 串口输出 - 注释掉重量打印
-      /*
-      Serial.print("时间: ");
-      Serial.print(millis() / 1000);
-      Serial.print("s | 重量: ");
-      Serial.print(weightGrams);
-      Serial.println(" g");
-      */
+      // 更新LED状态
+      updateLEDStatus();
       
       // OLED显示 - 实时显示当前重量
       if (oledAvailable) {
@@ -190,16 +191,11 @@ void loop() {
         
         // 状态显示
         display.setTextSize(1);
-        if (abs(weightGrams) > 5) {
-          display.println("Object Detected!");
+        if (weightStable) {
+          display.println("Stable");
         } else {
-          display.println("Empty");
+          display.println("Unstable");
         }
-        
-        // 第三行：总重量显示
-        display.print("Total: ");
-        display.print(totalWeight);
-        display.println(" g");
         
         display.display();
       }
@@ -212,9 +208,12 @@ void loop() {
           Serial.print(weightGrams);
           Serial.print("g Time:");
           Serial.print(millis() / 1000);
-          Serial.print("s Total:");
-          Serial.print(totalWeight);
-          Serial.print("g");
+          Serial.print("s Status:");
+          if (weightStable) {
+            Serial.print("Stable");
+          } else {
+            Serial.print("Unstable");
+          }
           if (abs(weightGrams) > 5) {
             Serial.println(" Object");
           } else {
@@ -226,31 +225,24 @@ void loop() {
           
           lastDataUpdate = millis();
           lastDataSent = millis();
-          Serial.println("数据已通过HC-08发送");
+          Serial.print("数据已通过HC-08发送 - 状态: ");
+          if (weightStable) {
+            Serial.println("稳定");
+          } else {
+            Serial.println("不稳定");
+          }
+          Serial.println("========================================");
         } else {
           Serial.println("蓝牙未连接，跳过数据发送");
+          Serial.println("========================================");
         }
       }
-      
-      // 重量状态提示 - 注释掉
-      /*
-      if (abs(weightGrams) > 5) {
-        Serial.println("  -> 检测到重物！");
-      } else {
-        Serial.println("  -> 传感器空载");
-      }
-      */
     } else {
       Serial.println("HX711读取失败");
+      Serial.println("========================================");
     }
   } else {
     // DT为高电平，数据未准备好
-    /*
-    Serial.print("时间: ");
-    Serial.print(millis() / 1000);
-    Serial.println("s | 数据未准备好");
-    */
-    
     if (oledAvailable) {
       display.clearDisplay();
       display.setTextSize(1);
@@ -264,39 +256,41 @@ void loop() {
   delay(50);  // 减少主循环延迟，提高响应速度
 }
 
-// 检查重量稳定性并累加总重量
+// 检查重量稳定性
 void checkWeightStability(long currentWeight) {
   // 检查重量是否在稳定阈值内
-  if (abs(currentWeight - currentStableWeight) <= STABLE_THRESHOLD) {
+  if (abs(currentWeight - lastWeight) <= STABLE_THRESHOLD) {
     // 重量稳定
     if (!weightStable) {
       // 刚开始稳定
       weightStable = true;
       stableStartTime = millis();
-      currentStableWeight = currentWeight;
     } else {
       // 持续稳定
       if (millis() - stableStartTime >= STABLE_DURATION) {
-        // 稳定时间足够，检查是否需要累加
-        if (abs(currentStableWeight - lastStableWeight) > STABLE_THRESHOLD) {
-          // 重量变化超过阈值，累加到总重量
-          long weightDifference = currentStableWeight - lastStableWeight;
-          if (abs(weightDifference) > STABLE_THRESHOLD) {
-            totalWeight += weightDifference;
-            Serial.print("重量稳定，累加差值: ");
-            Serial.print(weightDifference);
-            Serial.print("g, 总重量: ");
-            Serial.print(totalWeight);
-            Serial.println("g");
-          }
-          lastStableWeight = currentStableWeight;
-        }
+        // 稳定时间足够，保持稳定状态
+        weightStable = true;
       }
     }
   } else {
     // 重量不稳定，重置稳定状态
     weightStable = false;
-    currentStableWeight = currentWeight;
+    lastWeight = currentWeight;
+  }
+}
+
+// 更新LED状态
+void updateLEDStatus() {
+  if (weightStable) {
+    // 稳定状态：LED常亮
+    digitalWrite(STATUS_LED, HIGH);
+  } else {
+    // 不稳定状态：LED闪烁
+    if (millis() - lastLedUpdate > LED_BLINK_INTERVAL) {
+      ledState = !ledState;
+      digitalWrite(STATUS_LED, ledState);
+      lastLedUpdate = millis();
+    }
   }
 }
 
@@ -307,11 +301,13 @@ void checkBluetoothConnection() {
     if (bluetoothConnected) {
       bluetoothConnected = false;
       Serial.println("蓝牙状态: 未连接 (超时)");
+      Serial.println("========================================");
     }
   } else {
     if (!bluetoothConnected) {
       bluetoothConnected = true;
       Serial.println("蓝牙状态: 已连接");
+      Serial.println("========================================");
     }
   }
 }

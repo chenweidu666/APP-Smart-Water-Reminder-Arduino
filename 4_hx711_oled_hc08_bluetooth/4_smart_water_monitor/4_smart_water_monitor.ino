@@ -8,6 +8,7 @@
     - HC-08蓝牙模块数据传输
     - 串口输出详细信息
     - 重量状态自动判断
+    - 总重量累加功能
     - 根据HC-08资料包优化的连接方式
   硬件连接：
     - HX711的SCK连接到Arduino引脚10
@@ -43,6 +44,15 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 long Weight_Maopi = 0;  // 空载基准值
 #define GapValue 430  // 重量系数，与官方例程一致
 bool oledAvailable = false;  // OLED是否可用
+
+// 总重量累加功能
+long totalWeight = 0;  // 总重量累加
+long lastStableWeight = 0;  // 上次稳定重量
+long currentStableWeight = 0;  // 当前稳定重量
+bool weightStable = false;  // 重量是否稳定
+unsigned long stableStartTime = 0;  // 稳定开始时间
+const unsigned long STABLE_DURATION = 2000;  // 稳定持续时间2秒
+const long STABLE_THRESHOLD = 3;  // 稳定阈值3g
 
 // 蓝牙保护变量 - 1秒发送一次数据
 unsigned long lastDataUpdate = 0;
@@ -103,6 +113,7 @@ void setup() {
   Serial.println("蓝牙波特率: 9600");
   Serial.println("功能: 重量监控 + OLED显示 + HC-08蓝牙传输");
   Serial.println("显示模式: 实时显示（无缓存）");
+  Serial.println("总重量累加: 启用");
   Serial.println("数据发送频率: 1秒");
   Serial.println("================================");
   
@@ -155,6 +166,9 @@ void loop() {
       long weightRaw = rawData - Weight_Maopi;
       long weightGrams = (long)((float)weightRaw / GapValue);
       
+      // 检查重量稳定性
+      checkWeightStability(weightGrams);
+      
       // 串口输出 - 注释掉重量打印
       /*
       Serial.print("时间: ");
@@ -182,6 +196,11 @@ void loop() {
           display.println("Empty");
         }
         
+        // 第三行：总重量显示
+        display.print("Total: ");
+        display.print(totalWeight);
+        display.println(" g");
+        
         display.display();
       }
       
@@ -193,7 +212,9 @@ void loop() {
           Serial.print(weightGrams);
           Serial.print("g Time:");
           Serial.print(millis() / 1000);
-          Serial.print("s");
+          Serial.print("s Total:");
+          Serial.print(totalWeight);
+          Serial.print("g");
           if (abs(weightGrams) > 5) {
             Serial.println(" Object");
           } else {
@@ -241,6 +262,42 @@ void loop() {
   }
   
   delay(50);  // 减少主循环延迟，提高响应速度
+}
+
+// 检查重量稳定性并累加总重量
+void checkWeightStability(long currentWeight) {
+  // 检查重量是否在稳定阈值内
+  if (abs(currentWeight - currentStableWeight) <= STABLE_THRESHOLD) {
+    // 重量稳定
+    if (!weightStable) {
+      // 刚开始稳定
+      weightStable = true;
+      stableStartTime = millis();
+      currentStableWeight = currentWeight;
+    } else {
+      // 持续稳定
+      if (millis() - stableStartTime >= STABLE_DURATION) {
+        // 稳定时间足够，检查是否需要累加
+        if (abs(currentStableWeight - lastStableWeight) > STABLE_THRESHOLD) {
+          // 重量变化超过阈值，累加到总重量
+          long weightDifference = currentStableWeight - lastStableWeight;
+          if (abs(weightDifference) > STABLE_THRESHOLD) {
+            totalWeight += weightDifference;
+            Serial.print("重量稳定，累加差值: ");
+            Serial.print(weightDifference);
+            Serial.print("g, 总重量: ");
+            Serial.print(totalWeight);
+            Serial.println("g");
+          }
+          lastStableWeight = currentStableWeight;
+        }
+      }
+    }
+  } else {
+    // 重量不稳定，重置稳定状态
+    weightStable = false;
+    currentStableWeight = currentWeight;
+  }
 }
 
 // 检查蓝牙连接状态
