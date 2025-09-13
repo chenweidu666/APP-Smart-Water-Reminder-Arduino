@@ -1,0 +1,6 @@
+.DS_Store
+libraries/
+资料包/
+*.tmp
+*.bak
+*.log
