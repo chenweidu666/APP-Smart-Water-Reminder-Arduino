@@ -86,7 +86,7 @@ struct ConnectedView: View {
                 .padding()
                 */
                 
-                // 3. 杯子重量设置
+                // 杯子重量设置
                 VStack(alignment: .leading) {
                     Text("杯子重量设置:")
                         .font(.headline)
@@ -163,7 +163,7 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 1. 喝水统计
+                // 喝水统计
                 VStack(alignment: .leading) {
                     Text("喝水统计:")
                         .font(.headline)
@@ -248,7 +248,7 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 2. 当前数据
+                // 当前数据
                 VStack(alignment: .leading) {
                     Text("当前数据:")
                         .font(.headline)
@@ -297,7 +297,7 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 4. 当天喝水记录
+                // 当天喝水记录
                 VStack(alignment: .leading) {
                     Text("当天喝水记录:")
                         .font(.headline)
