@@ -66,8 +66,53 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
+                // 当天喝水统计
+                VStack(alignment: .leading) {
+                    Text("今天喝水统计:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("喝水次数")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("\(btVM.todayDrinkCount) 次")
+                                .fontWeight(.bold)
+                                .font(.title2)
+                                .foregroundColor(.blue)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack(alignment: .leading) {
+                            Text("喝水总量")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("\(btVM.todayDrinkTotal) ml")
+                                .fontWeight(.bold)
+                                .font(.title2)
+                                .foregroundColor(.green)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack(alignment: .leading) {
+                            Text("本周平均")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("\(btVM.weeklyAverage) ml")
+                                .fontWeight(.bold)
+                                .font(.title2)
+                                .foregroundColor(.orange)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
+                }
+                .padding()
                 
-                // 解析后的数据表格
+                // 当前数据
                 VStack(alignment: .leading) {
                     Text("当前数据:")
                         .font(.headline)
@@ -116,7 +161,8 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 数据库记录显示
+                // 最近的记录（注释掉）
+                /*
                 VStack(alignment: .leading) {
                     Text("最近的记录:")
                         .font(.headline)
@@ -147,12 +193,14 @@ struct ConnectedView: View {
                     }
                 }
                 .padding()
+                */
                 }
             }
             .navigationTitle("HC-08 重量监测")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 btVM.loadRecentRecords()
+                btVM.calculateDrinkStatistics()
             }
         }
     }

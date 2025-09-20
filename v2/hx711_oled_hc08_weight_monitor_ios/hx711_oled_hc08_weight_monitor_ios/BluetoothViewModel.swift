@@ -31,6 +31,11 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var latestWeightData: WeightData? = nil
     @Published var recentRecords: [WeightRecord] = []
     
+    // 喝水统计
+    @Published var todayDrinkCount: Int = 0
+    @Published var todayDrinkTotal: Int = 0  // 单位：毫升
+    @Published var weeklyAverage: Int = 0   // 单位：毫升
+    
     private var centralManager: CBCentralManager!
     private var foundPeripherals: [CBPeripheral] = []
     private var targetServiceUUID = CBUUID(string: "FFE0")
@@ -256,6 +261,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                             self.saveWeightRecord(weight: weight, status: status, object: object)
                             self.lastStableObject = object
                             self.loadRecentRecords()
+                            self.calculateDrinkStatistics()
                         } else if status != "Stable" {
                             // 如果状态不是stable，重置lastStableObject
                             self.lastStableObject = nil
@@ -300,6 +306,73 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             }
         } catch {
             print("加载记录失败: \(error.localizedDescription)")
+        }
+    }
+    
+    // 计算喝水统计
+    func calculateDrinkStatistics() {
+        let context = persistenceController.container.viewContext
+        
+        // 计算今天的喝水统计
+        let today = Calendar.current.startOfDay(for: Date())
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+        
+        let todayRequest: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        todayRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@", today as NSDate, tomorrow as NSDate)
+        todayRequest.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: true)]
+        
+        do {
+            let todayRecords = try context.fetch(todayRequest)
+            
+            // 计算今天的喝水次数和总量
+            var drinkCount = 0
+            var totalDrinkAmount = 0
+            
+            if todayRecords.count > 1 {
+                for i in 1..<todayRecords.count {
+                    let previousWeight = Int(todayRecords[i-1].weight)
+                    let currentWeight = Int(todayRecords[i].weight)
+                    let weightDifference = previousWeight - currentWeight
+                    
+                    // 如果重量减少（喝水），计算喝水量（假设1g = 1ml）
+                    if weightDifference > 0 {
+                        drinkCount += 1
+                        totalDrinkAmount += weightDifference
+                    }
+                }
+            }
+            
+            // 计算本周平均
+            let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: today)!
+            let weeklyRequest: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+            weeklyRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@", weekAgo as NSDate, tomorrow as NSDate)
+            weeklyRequest.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: true)]
+            
+            let weeklyRecords = try context.fetch(weeklyRequest)
+            var weeklyTotal = 0
+            
+            if weeklyRecords.count > 1 {
+                for i in 1..<weeklyRecords.count {
+                    let previousWeight = Int(weeklyRecords[i-1].weight)
+                    let currentWeight = Int(weeklyRecords[i].weight)
+                    let weightDifference = previousWeight - currentWeight
+                    
+                    if weightDifference > 0 {
+                        weeklyTotal += weightDifference
+                    }
+                }
+            }
+            
+            let weeklyAverage = weeklyRecords.count > 0 ? weeklyTotal / 7 : 0
+            
+            DispatchQueue.main.async {
+                self.todayDrinkCount = drinkCount
+                self.todayDrinkTotal = totalDrinkAmount
+                self.weeklyAverage = weeklyAverage
+            }
+            
+        } catch {
+            print("计算喝水统计失败: \(error.localizedDescription)")
         }
     }
 }
