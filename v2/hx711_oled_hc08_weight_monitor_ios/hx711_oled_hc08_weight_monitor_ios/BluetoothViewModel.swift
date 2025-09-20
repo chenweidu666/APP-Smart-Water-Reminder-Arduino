@@ -44,8 +44,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     
     // 喝水统计
     @Published var todayDrinkCount: Int = 0
-    @Published var todayDrinkTotal: Int = 0  // 单位：毫升
-    @Published var weeklyAverage: Int = 0   // 单位：毫升
+    @Published var todayDrinkTotal: Int = 0  // 单位：克
+    @Published var weeklyAverage: Int = 0   // 单位：克
     
     // 杯子重量设置
     @Published var cupWeight: Int = 95 // 杯子重量（克），可在UI中配置
@@ -426,7 +426,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             let weeklyAverage = weeklyRecords.count > 0 ? weeklyTotal / 7 : 0
             
             DispatchQueue.main.async {
-                print("统计计算完成: 今天喝水次数=\(drinkCount), 总量=\(totalDrinkAmount)ml, 本周平均=\(weeklyAverage)ml")
+                print("统计计算完成: 今天喝水次数=\(drinkCount), 总量=\(totalDrinkAmount)g, 本周平均=\(weeklyAverage)g")
                 self.todayDrinkCount = drinkCount
                 self.todayDrinkTotal = totalDrinkAmount
                 self.weeklyAverage = weeklyAverage

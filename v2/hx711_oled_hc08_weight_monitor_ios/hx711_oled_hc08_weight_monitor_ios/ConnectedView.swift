@@ -138,7 +138,7 @@ struct ConnectedView: View {
                                 Text("喝水阈值")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text("0ml")
+                                Text("0g")
                                     .fontWeight(.bold)
                                     .font(.title3)
                             }
@@ -183,7 +183,7 @@ struct ConnectedView: View {
                             Text("喝水总量")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("\(btVM.todayDrinkTotal) ml")
+                            Text("\(btVM.todayDrinkTotal) g")
                                 .fontWeight(.bold)
                                 .font(.title2)
                                 .foregroundColor(.green)
@@ -194,7 +194,7 @@ struct ConnectedView: View {
                             Text("本周平均")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("\(btVM.weeklyAverage) ml")
+                            Text("\(btVM.weeklyAverage) g")
                                 .fontWeight(.bold)
                                 .font(.title2)
                                 .foregroundColor(.orange)
@@ -270,13 +270,13 @@ struct ConnectedView: View {
                         ForEach(btVM.drinkRecords) { record in
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("喝水前: \(record.beforeWeight)ml")
+                                    Text("喝水前: \(record.beforeWeight)g")
                                         .font(.caption)
                                         .foregroundColor(.blue)
-                                    Text("喝水后: \(record.afterWeight)ml")
+                                    Text("喝水后: \(record.afterWeight)g")
                                         .font(.caption)
                                         .foregroundColor(.green)
-                                    Text("喝水量: \(record.drinkAmount)ml")
+                                    Text("喝水量: \(record.drinkAmount)g")
                                         .font(.body)
                                         .fontWeight(.bold)
                                         .foregroundColor(.red)
