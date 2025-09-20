@@ -120,17 +120,17 @@ struct ConnectedView: View {
                                 Text("喝水阈值")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text("10g")
+                                Text("10ml")
                                     .fontWeight(.bold)
                                     .font(.title3)
                             }
                             .frame(maxWidth: .infinity)
                             
                             VStack(alignment: .leading) {
-                                Text("范围")
+                                Text("存储内容")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text("50-500g")
+                                Text("水的重量")
                                     .fontWeight(.bold)
                                     .font(.title3)
                             }

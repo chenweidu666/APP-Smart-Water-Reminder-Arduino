@@ -285,14 +285,17 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     private func saveWeightRecord(weight: Int, status: String, object: String) {
         let context = persistenceController.container.viewContext
         let weightRecord = WeightRecord(context: context)
-        weightRecord.weight = Int32(weight)
+        
+        // 存储时减去杯子重量，只保存水的重量
+        let waterWeight = max(0, weight - cupWeight)
+        weightRecord.weight = Int32(waterWeight)
         weightRecord.status = status
         weightRecord.object = object
         weightRecord.timestamp = Date() // 使用手机当前时间
         
         do {
             try context.save()
-            print("重量记录已保存: weight=\(weight), status=\(status), object=\(object)")
+            print("重量记录已保存: 原始重量=\(weight)g, 杯子重量=\(cupWeight)g, 水的重量=\(waterWeight)g, status=\(status), object=\(object)")
         } catch {
             print("保存重量记录失败: \(error.localizedDescription)")
         }
@@ -330,21 +333,21 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         do {
             let todayRecords = try context.fetch(todayRequest)
             
-            // 计算今天的喝水次数和总量（只计算重量下降的差值）
+            // 计算今天的喝水次数和总量（数据库中存储的是水的重量）
             var drinkCount = 0
             var totalDrinkAmount = 0
             
             if todayRecords.count > 1 {
                 for i in 1..<todayRecords.count {
-                    let previousWeight = Int(todayRecords[i-1].weight)
-                    let currentWeight = Int(todayRecords[i].weight)
-                    let weightDifference = previousWeight - currentWeight
+                    let previousWaterWeight = Int(todayRecords[i-1].weight)
+                    let currentWaterWeight = Int(todayRecords[i].weight)
+                    let waterDifference = previousWaterWeight - currentWaterWeight
                     
-                    // 只有当重量减少（喝水）且差值大于一定阈值时才计算
-                    // 过滤掉小的波动，假设至少减少10g才算一次喝水
-                    if weightDifference >= 10 {
+                    // 只有当水的重量减少（喝水）且差值大于一定阈值时才计算
+                    // 过滤掉小的波动，假设至少减少10ml才算一次喝水
+                    if waterDifference >= 10 {
                         drinkCount += 1
-                        totalDrinkAmount += weightDifference
+                        totalDrinkAmount += waterDifference
                     }
                 }
             }
@@ -360,13 +363,13 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             
             if weeklyRecords.count > 1 {
                 for i in 1..<weeklyRecords.count {
-                    let previousWeight = Int(weeklyRecords[i-1].weight)
-                    let currentWeight = Int(weeklyRecords[i].weight)
-                    let weightDifference = previousWeight - currentWeight
+                    let previousWaterWeight = Int(weeklyRecords[i-1].weight)
+                    let currentWaterWeight = Int(weeklyRecords[i].weight)
+                    let waterDifference = previousWaterWeight - currentWaterWeight
                     
-                    // 只计算重量下降的差值（喝水）
-                    if weightDifference >= 10 {
-                        weeklyTotal += weightDifference
+                    // 只计算水的重量下降的差值（喝水）
+                    if waterDifference >= 10 {
+                        weeklyTotal += waterDifference
                     }
                 }
             }
