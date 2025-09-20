@@ -66,103 +66,6 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                /*
-                // 接收到的数据
-                VStack(alignment: .leading) {
-                    Text("接收到的数据:")
-                        .font(.headline)
-                        .padding(.top)
-                    
-                    ScrollView {
-                        Text(btVM.receivedData)
-                            .font(.system(.body, design: .monospaced))
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                    .frame(maxHeight: 200)
-                }
-                .padding()
-                */
-                
-                // 3. 杯子重量设置
-                VStack(alignment: .leading) {
-                    Text("杯子重量设置:")
-                        .font(.headline)
-                        .padding(.top)
-                    
-                    VStack(spacing: 12) {
-                        // 杯子重量配置
-                        HStack {
-                            Text("杯子重量:")
-                                .font(.body)
-                            Spacer()
-                            HStack {
-                                Button("-") {
-                                    if btVM.cupWeight > 50 {
-                                        btVM.cupWeight -= 10
-                                    }
-                                }
-                                .frame(width: 30, height: 30)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(5)
-                                
-                                Text("\(btVM.cupWeight)g")
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                    .frame(minWidth: 60)
-                                
-                                Button("+") {
-                                    if btVM.cupWeight < 500 {
-                                        btVM.cupWeight += 10
-                                    }
-                                }
-                                .frame(width: 30, height: 30)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(5)
-                            }
-                        }
-                        
-                        // 显示阈值信息
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text("存储阈值")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                Text("\(Int(Double(btVM.cupWeight) * 0.9))g")
-                                    .fontWeight(.bold)
-                                    .font(.title3)
-                            }
-                            .frame(maxWidth: .infinity)
-                            
-                            VStack(alignment: .leading) {
-                                Text("喝水阈值")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                Text("5g")
-                                    .fontWeight(.bold)
-                                    .font(.title3)
-                            }
-                            .frame(maxWidth: .infinity)
-                            
-                            VStack(alignment: .leading) {
-                                Text("存储内容")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                Text("水的重量")
-                                    .fontWeight(.bold)
-                                    .font(.title3)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .padding()
-                
                 // 1. 喝水统计
                 VStack(alignment: .leading) {
                     Text("喝水统计:")
@@ -254,46 +157,120 @@ struct ConnectedView: View {
                         .font(.headline)
                         .padding(.top)
                     
-                    if let weightData = btVM.latestWeightData {
+                    HStack {
+                        VStack {
+                            Text("重量")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(btVM.latestWeightData != nil ? "\(btVM.latestWeightData!.weight)g" : "等待数据")
+                                .fontWeight(.bold)
+                                .font(.title2)
+                                .foregroundColor(.blue)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack {
+                            Text("状态")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(btVM.latestWeightData?.status ?? "等待数据")
+                                .fontWeight(.bold)
+                                .font(.title2)
+                                .foregroundColor(.green)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack {
+                            Text("物体")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(btVM.latestWeightData?.object ?? "等待数据")
+                                .fontWeight(.bold)
+                                .font(.title2)
+                                .foregroundColor(.orange)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                }
+                .padding()
+                
+                // 3. 杯子重量设置
+                VStack(alignment: .leading) {
+                    Text("杯子重量设置:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    VStack(spacing: 12) {
+                        // 杯子重量配置
+                        HStack {
+                            Text("杯子重量:")
+                                .font(.body)
+                            Spacer()
+                            HStack {
+                                Button("-") {
+                                    if btVM.cupWeight > 50 {
+                                        btVM.cupWeight -= 10
+                                    }
+                                }
+                                .frame(width: 30, height: 30)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(5)
+                                
+                                Text("\(btVM.cupWeight)g")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .frame(minWidth: 60)
+                                
+                                Button("+") {
+                                    if btVM.cupWeight < 500 {
+                                        btVM.cupWeight += 10
+                                    }
+                                }
+                                .frame(width: 30, height: 30)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(5)
+                            }
+                        }
+                        
+                        // 显示阈值信息
                         HStack {
                             VStack(alignment: .leading) {
-                                Text("重量")
+                                Text("存储阈值")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text("\(weightData.weight)g")
+                                Text("\(Int(Double(btVM.cupWeight) * 0.9))g")
                                     .fontWeight(.bold)
-                                    .font(.title2)
+                                    .font(.title3)
                             }
                             .frame(maxWidth: .infinity)
                             
                             VStack(alignment: .leading) {
-                                Text("状态")
+                                Text("喝水阈值")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text(weightData.status)
+                                Text("5g")
                                     .fontWeight(.bold)
-                                    .font(.title2)
+                                    .font(.title3)
                             }
                             .frame(maxWidth: .infinity)
                             
                             VStack(alignment: .leading) {
-                                Text("物体")
+                                Text("存储内容")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text(weightData.object)
+                                Text("水的重量")
                                     .fontWeight(.bold)
-                                    .font(.title2)
+                                    .font(.title3)
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                    } else {
-                        Text("等待数据...")
-                            .foregroundColor(.gray)
-                            .padding()
                     }
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
                 }
                 .padding()
                 
@@ -383,31 +360,21 @@ struct ConnectedView: View {
                         .font(.headline)
                         .padding(.top)
                     
-                    if btVM.recentRecords.isEmpty {
-                        Text("暂无记录")
-                            .foregroundColor(.gray)
-                            .padding()
-                    } else {
-                        ForEach(btVM.recentRecords) { record in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text("重量: \(record.weight)g")
-                                        .fontWeight(.bold)
-                                    Text("物体: \(record.object ?? "")")
-                                    Text("状态: \(record.status ?? "")")
-                                    Text("时间: \(formatDate(record.timestamp))")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                                Spacer()
+                    ForEach(btVM.recentRecords) { record in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("重量: \(record.weight)g")
+                                Text("状态: \(record.status ?? "未知")")
+                                Text("物体: \(record.object ?? "未知")")
+                                Text("时间: \(formatDate(record.timestamp))")
                             }
                             .padding()
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(8)
                         }
+                        .padding()
                     }
                 }
-                .padding()
                 */
                 }
             }
