@@ -222,7 +222,7 @@ struct ConnectedView: View {
                                     .font(.caption)
                                     .fontWeight(.bold)
                                     .frame(maxWidth: .infinity)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(index == 0 ? .green : .gray)
                             }
                         }
                         
@@ -437,15 +437,8 @@ struct ConnectedView: View {
         let calendar = Calendar.current
         let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: Date())!
         let formatter = DateFormatter()
-        
-        if dayOffset == 0 {
-            return "今天"
-        } else if dayOffset == 1 {
-            return "昨天"
-        } else {
-            formatter.dateFormat = "M/d"
-            return formatter.string(from: targetDate)
-        }
+        formatter.dateFormat = "M.d"
+        return formatter.string(from: targetDate)
     }
 }
 
