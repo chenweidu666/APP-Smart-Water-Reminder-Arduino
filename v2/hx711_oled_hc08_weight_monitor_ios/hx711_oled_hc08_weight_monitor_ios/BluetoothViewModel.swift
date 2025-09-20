@@ -2,6 +2,17 @@ import Foundation
 import CoreBluetooth
 import SwiftUI
 import Combine
+import CoreData
+
+struct WeightData: Identifiable {
+    let id = UUID()
+    let weight: Int
+    let status: String
+    let object: String
+    let time: Int
+    let system: String
+    let timestamp = Date()
+}
 
 struct BluetoothDevice: Identifiable {
     let id = UUID()
@@ -16,11 +27,16 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var connectedDevice: BluetoothDevice? = nil
     @Published var receivedData: String = ""
     @Published var isConnected: Bool = false
+    @Published var latestWeightData: WeightData? = nil
+    @Published var recentRecords: [WeightRecord] = []
     
     private var centralManager: CBCentralManager!
     private var foundPeripherals: [CBPeripheral] = []
     private var targetServiceUUID = CBUUID(string: "FFE0")
     private var characteristicUUID = CBUUID(string: "FFE1")
+    private var jsonBuffer = ""
+    private var lastStableObject: String? = nil
+    private var persistenceController = PersistenceController.shared
 
     override init() {
         super.init()
@@ -175,12 +191,82 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             return
         }
         
-        if let data = characteristic.value, let string = String(data: data, encoding: .utf8) {
+        if let jsonData = characteristic.value, let string = String(data: jsonData, encoding: .utf8) {
             print("收到数据: \(string)")
             DispatchQueue.main.async {
-                let lines = self.receivedData.split(separator: "\n").suffix(3)
+                // 恢复原始的数据显示格式
+                let lines = self.receivedData.split(separator: "\n").suffix(6)
                 self.receivedData = lines.joined(separator: "\n") + "\n" + string
+                
+                // 将接收到的字符串添加到缓冲区
+                self.jsonBuffer += string
+                
+                // 尝试从缓冲区中查找完整的JSON对象
+                if let jsonStart = self.jsonBuffer.range(of: "{"),
+                   let jsonEnd = self.jsonBuffer.range(of: "}", options: .backwards) {
+                    
+                    let jsonString = String(self.jsonBuffer[jsonStart.lowerBound...jsonEnd.upperBound])
+                    
+                    // 尝试解析JSON
+                    if let jsonData = jsonString.data(using: .utf8),
+                       let json = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any],
+                       let weight = json["weight"] as? Int,
+                       let status = json["status"] as? String,
+                       let object = json["object"] as? String,
+                       let system = json["system"] as? String {
+                        
+                        let weightData = WeightData(weight: weight, status: status, object: object, time: 0, system: system)
+                        self.latestWeightData = weightData
+                        
+                        // 只记录stable状态且第一次的数据
+                        if status == "Stable" && self.lastStableObject != object {
+                            self.saveWeightRecord(weight: weight, status: status, object: object)
+                            self.lastStableObject = object
+                            self.loadRecentRecords()
+                        } else if status != "Stable" {
+                            // 如果状态不是stable，重置lastStableObject
+                            self.lastStableObject = nil
+                        }
+                        
+                        // 清除已解析的JSON部分
+                        self.jsonBuffer.removeSubrange(jsonStart.lowerBound...jsonEnd.upperBound)
+                    }
+                }
             }
+        }
+    }
+    
+    // 保存重量记录到数据库
+    private func saveWeightRecord(weight: Int, status: String, object: String) {
+        let context = persistenceController.container.viewContext
+        let weightRecord = WeightRecord(context: context)
+        weightRecord.weight = Int32(weight)
+        weightRecord.status = status
+        weightRecord.object = object
+        weightRecord.timestamp = Date() // 使用手机当前时间
+        
+        do {
+            try context.save()
+            print("重量记录已保存: weight=\(weight), status=\(status), object=\(object)")
+        } catch {
+            print("保存重量记录失败: \(error.localizedDescription)")
+        }
+    }
+    
+    // 加载最近的记录
+    func loadRecentRecords() {
+        let context = persistenceController.container.viewContext
+        let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: false)]
+        request.fetchLimit = 3
+        
+        do {
+            let records = try context.fetch(request)
+            DispatchQueue.main.async {
+                self.recentRecords = records
+            }
+        } catch {
+            print("加载记录失败: \(error.localizedDescription)")
         }
     }
 }

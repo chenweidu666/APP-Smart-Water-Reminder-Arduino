@@ -50,11 +50,98 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
+                // 解析后的数据表格
+                VStack(alignment: .leading) {
+                    Text("解析后的数据:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    if let weightData = btVM.latestWeightData {
+                        Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 10) {
+                            GridRow {
+                                Text("重量:")
+                                    .fontWeight(.bold)
+                                Text("\(weightData.weight)")
+                            }
+                            GridRow {
+                                Text("状态:")
+                                    .fontWeight(.bold)
+                                Text(weightData.status)
+                            }
+                            GridRow {
+                                Text("物体:")
+                                    .fontWeight(.bold)
+                                Text(weightData.object)
+                            }
+                            GridRow {
+                                Text("时间:")
+                                    .fontWeight(.bold)
+                                Text("\(weightData.time)")
+                            }
+                            GridRow {
+                                Text("系统:")
+                                    .fontWeight(.bold)
+                                Text(weightData.system)
+                            }
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                    } else {
+                        Text("等待数据...")
+                            .foregroundColor(.gray)
+                            .padding()
+                    }
+                }
+                .padding()
+                
+                // 数据库记录显示
+                VStack(alignment: .leading) {
+                    Text("最近的记录:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    if btVM.recentRecords.isEmpty {
+                        Text("暂无记录")
+                            .foregroundColor(.gray)
+                            .padding()
+                    } else {
+                        ForEach(btVM.recentRecords) { record in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("重量: \(record.weight)g")
+                                        .fontWeight(.bold)
+                                    Text("物体: \(record.object ?? "")")
+                                    Text("状态: \(record.status ?? "")")
+                                    Text("时间: \(formatDate(record.timestamp))")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                        }
+                    }
+                }
+                .padding()
+                
                 Spacer()
             }
             .navigationTitle("数据接收")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                btVM.loadRecentRecords()
+            }
         }
+    }
+    
+    private func formatDate(_ date: Date?) -> String {
+        guard let date = date else { return "未知时间" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.string(from: date)
     }
 }
 

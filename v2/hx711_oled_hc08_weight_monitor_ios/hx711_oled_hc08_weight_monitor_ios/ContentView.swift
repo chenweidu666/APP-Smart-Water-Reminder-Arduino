@@ -11,12 +11,15 @@ import CoreBluetooth
 struct ContentView: View {
     @StateObject private var btVM = BluetoothViewModel()
     
+    @State private var showConfirmationDialog = false
+    @State private var selectedDevice: BluetoothDevice? = nil
+    
     var body: some View {
         NavigationView {
             VStack {
                 // 蓝牙状态指示器
                 HStack {
-                    Image(systemName: btVM.isBluetoothPoweredOn ? "bluetooth" : "bluetooth.slash")
+                    Image(systemName: btVM.isBluetoothPoweredOn ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
                         .foregroundColor(btVM.isBluetoothPoweredOn ? .blue : .red)
                     Text(btVM.isBluetoothPoweredOn ? "蓝牙已开启" : "蓝牙未开启")
                         .foregroundColor(btVM.isBluetoothPoweredOn ? .blue : .red)
@@ -64,13 +67,22 @@ struct ContentView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         if !btVM.isConnected || btVM.connectedDevice?.id != device.id {
-                            btVM.connectToDevice(device)
+                            selectedDevice = device
+                            showConfirmationDialog = true
                         }
                     }
                 }
                 .listStyle(InsetGroupedListStyle())
             }
             .navigationTitle("蓝牙设备")
+            .confirmationDialog("确认连接", isPresented: $showConfirmationDialog, presenting: selectedDevice) { device in
+                Button("确认连接") {
+                    btVM.connectToDevice(device)
+                }
+                Button("取消", role: .cancel) {}
+            } message: { device in
+                Text("确定要连接到 \(device.name) 吗？")
+            }
             .fullScreenCover(isPresented: $btVM.isConnected) {
                 ConnectedView()
                     .environmentObject(btVM)
