@@ -268,14 +268,23 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                         
                         // 只记录stable状态且第一次的数据，并且重量要大于杯子重量的90%
                         let currentCupWeight = self.cupWeight
+                        print("数据处理: weight=\(weight), status=\(status), object=\(object), lastStableObject=\(self.lastStableObject ?? "nil"), threshold=\(Int(Double(currentCupWeight) * 0.9))")
+                        
                         if status == "Stable" && self.lastStableObject != object && weight >= Int(Double(currentCupWeight) * 0.9) {
+                            print("保存记录: 符合条件，开始保存")
                             self.saveWeightRecord(weight: weight, status: status, object: object, cupWeight: currentCupWeight)
                             self.lastStableObject = object
+                            print("保存记录: 完成，开始加载记录")
                             self.loadRecentRecords()
+                            print("保存记录: 开始计算统计")
                             self.calculateDrinkStatistics()
+                            print("保存记录: 全部完成")
                         } else if status != "Stable" {
                             // 如果状态不是stable，重置lastStableObject
+                            print("重置状态: 状态不是Stable")
                             self.lastStableObject = nil
+                        } else {
+                            print("跳过记录: 不满足保存条件")
                         }
                         
                         // 清除已解析的JSON部分
@@ -325,6 +334,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     
     // 计算喝水统计
     func calculateDrinkStatistics() {
+        print("开始计算喝水统计")
         let context = persistenceController.container.viewContext
         
         // 计算今天的喝水统计
@@ -382,6 +392,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             let weeklyAverage = weeklyRecords.count > 0 ? weeklyTotal / 7 : 0
             
             DispatchQueue.main.async {
+                print("统计计算完成: 今天喝水次数=\(drinkCount), 总量=\(totalDrinkAmount)ml, 本周平均=\(weeklyAverage)ml")
                 self.todayDrinkCount = drinkCount
                 self.todayDrinkTotal = totalDrinkAmount
                 self.weeklyAverage = weeklyAverage
