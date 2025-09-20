@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 @main
 struct hx711_oled_hc08_weight_monitor_iosApp: App {
