@@ -263,8 +263,9 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                         self.latestWeightData = weightData
                         
                         // 只记录stable状态且第一次的数据，并且重量要大于杯子重量的90%
-                        if status == "Stable" && self.lastStableObject != object && weight >= Int(Double(self.cupWeight) * 0.9) {
-                            self.saveWeightRecord(weight: weight, status: status, object: object)
+                        let currentCupWeight = self.cupWeight
+                        if status == "Stable" && self.lastStableObject != object && weight >= Int(Double(currentCupWeight) * 0.9) {
+                            self.saveWeightRecord(weight: weight, status: status, object: object, cupWeight: currentCupWeight)
                             self.lastStableObject = object
                             self.loadRecentRecords()
                             self.calculateDrinkStatistics()
@@ -282,7 +283,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     }
     
     // 保存重量记录到数据库
-    private func saveWeightRecord(weight: Int, status: String, object: String) {
+    private func saveWeightRecord(weight: Int, status: String, object: String, cupWeight: Int) {
         let context = persistenceController.container.viewContext
         let weightRecord = WeightRecord(context: context)
         
