@@ -233,51 +233,37 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             DispatchQueue.main.async {
                 // 将接收到的字符串添加到缓冲区
                 self.jsonBuffer += string
-                print("当前缓冲区: \(self.jsonBuffer)")
                 
                 // 尝试从缓冲区中查找完整的JSON对象
                 if let jsonStart = self.jsonBuffer.range(of: "{"),
                    let jsonEnd = self.jsonBuffer.range(of: "}", options: .backwards) {
                     
                     let jsonString = String(self.jsonBuffer[jsonStart.lowerBound...jsonEnd.upperBound])
-                    print("提取的JSON字符串: \(jsonString)")
                     
                     // 尝试解析JSON
                     if let jsonData = jsonString.data(using: .utf8),
-                       let json = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
+                       let json = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any],
+                       let weight = json["weight"] as? Int,
+                       let status = json["status"] as? String,
+                       let object = json["object"] as? String,
+                       let system = json["system"] as? String {
                         
-                        print("解析的JSON: \(json)")
+                        let weightData = WeightData(weight: weight, status: status, object: object, time: 0, system: system)
+                        self.latestWeightData = weightData
                         
-                        if let weight = json["weight"] as? Int,
-                           let status = json["status"] as? String,
-                           let object = json["object"] as? String,
-                           let system = json["system"] as? String {
-                            
-                            print("成功解析: weight=\(weight), status=\(status), object=\(object), system=\(system)")
-                            
-                            let weightData = WeightData(weight: weight, status: status, object: object, time: 0, system: system)
-                            self.latestWeightData = weightData
-                            
-                            // 只记录stable状态且第一次的数据
-                            if status == "Stable" && self.lastStableObject != object {
-                                self.saveWeightRecord(weight: weight, status: status, object: object)
-                                self.lastStableObject = object
-                                self.loadRecentRecords()
-                            } else if status != "Stable" {
-                                // 如果状态不是stable，重置lastStableObject
-                                self.lastStableObject = nil
-                            }
-                            
-                            // 清除已解析的JSON部分
-                            self.jsonBuffer.removeSubrange(jsonStart.lowerBound...jsonEnd.upperBound)
-                        } else {
-                            print("JSON字段解析失败")
+                        // 只记录stable状态且第一次的数据
+                        if status == "Stable" && self.lastStableObject != object {
+                            self.saveWeightRecord(weight: weight, status: status, object: object)
+                            self.lastStableObject = object
+                            self.loadRecentRecords()
+                        } else if status != "Stable" {
+                            // 如果状态不是stable，重置lastStableObject
+                            self.lastStableObject = nil
                         }
-                    } else {
-                        print("JSON解析失败")
+                        
+                        // 清除已解析的JSON部分
+                        self.jsonBuffer.removeSubrange(jsonStart.lowerBound...jsonEnd.upperBound)
                     }
-                } else {
-                    print("未找到完整的JSON对象")
                 }
             }
         }
