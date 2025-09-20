@@ -40,7 +40,7 @@
 
 class</string>
 				<key>trailing</key>
-				<string> BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate {
+				<string> BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     @Published var devices: [BluetoothDevice] = []
     @Published var isBluetoothPoweredOn = false
 </string>
