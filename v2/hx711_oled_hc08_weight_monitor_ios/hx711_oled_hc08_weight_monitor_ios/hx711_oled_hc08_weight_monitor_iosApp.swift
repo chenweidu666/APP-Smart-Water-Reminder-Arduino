@@ -14,7 +14,7 @@ struct hx711_oled_hc08_weight_monitor_iosApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ConnectedView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }

@@ -27,6 +27,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var connectedDevice: BluetoothDevice? = nil
     @Published var receivedData: String = ""
     @Published var isConnected: Bool = false
+    @Published var isConnecting: Bool = false
     @Published var latestWeightData: WeightData? = nil
     @Published var recentRecords: [WeightRecord] = []
     
@@ -88,6 +89,32 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         errorMessage = nil
         centralManager.scanForPeripherals(withServices: nil, options: nil)
     }
+    
+    // 自动连接HC-08
+    func autoConnectToHC08() {
+        guard isBluetoothPoweredOn else {
+            errorMessage = "蓝牙未开启"
+            return
+        }
+        
+        isConnecting = true
+        errorMessage = "正在搜索 HC-08..."
+        
+        devices.removeAll()
+        foundPeripherals.removeAll()
+        
+        // 扫描设备，寻找HC-08
+        centralManager.scanForPeripherals(withServices: nil, options: nil)
+        
+        // 设置超时，10秒后停止扫描
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            if self.isConnecting {
+                self.centralManager.stopScan()
+                self.isConnecting = false
+                self.errorMessage = "找不到 HC-08，请开启客户端"
+            }
+        }
+    }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         guard !foundPeripherals.contains(peripheral) else { return }
@@ -96,6 +123,12 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         let device = BluetoothDevice(name: name, peripheral: peripheral)
         DispatchQueue.main.async {
             self.devices.append(device)
+            
+            // 如果正在自动连接且找到HC-08，立即连接
+            if self.isConnecting && name == "HC-08" {
+                self.centralManager.stopScan()
+                self.connectToDevice(device)
+            }
         }
     }
     
@@ -105,6 +138,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         device.peripheral.delegate = self
         centralManager.connect(device.peripheral, options: nil)
         errorMessage = "正在连接..."
+        isConnecting = true
     }
     
     // 断开连接
@@ -121,6 +155,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         DispatchQueue.main.async {
             self.connectedDevice = self.devices.first { $0.peripheral == peripheral }
             self.isConnected = true
+            self.isConnecting = false
             self.errorMessage = "连接成功"
         }
     }
@@ -129,6 +164,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         print("连接失败: \(error?.localizedDescription ?? "未知错误")")
         DispatchQueue.main.async {
+            self.isConnecting = false
             self.errorMessage = "连接失败: \(error?.localizedDescription ?? "未知错误")"
         }
     }
@@ -139,6 +175,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         DispatchQueue.main.async {
             self.connectedDevice = nil
             self.isConnected = false
+            self.isConnecting = false
             self.receivedData = ""
             if let error = error {
                 self.errorMessage = "断开连接: \(error.localizedDescription)"
