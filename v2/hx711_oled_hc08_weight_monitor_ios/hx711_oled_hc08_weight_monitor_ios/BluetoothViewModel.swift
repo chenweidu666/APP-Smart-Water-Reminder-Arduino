@@ -382,9 +382,9 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                     let currentWaterWeight = Int(todayRecords[i].weight)
                     let waterDifference = previousWaterWeight - currentWaterWeight
                     
-                    // 只有当水的重量减少（喝水）时才计算
-                    // 喝水阈值为0，任何重量减少都算喝水
-                    if waterDifference > 0 {
+                    // 只有当水的重量减少（喝水）且差值大于5g时才计算
+                    // 过滤掉小的波动，至少减少5g才算喝水
+                    if waterDifference >= 5 {
                         drinkCount += 1
                         totalDrinkAmount += waterDifference
                         
@@ -424,8 +424,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                         let currentWaterWeight = Int(dayRecords[i].weight)
                         let waterDifference = previousWaterWeight - currentWaterWeight
                         
-                        // 只计算水的重量下降的差值（喝水）
-                        if waterDifference > 0 {
+                    // 只计算水的重量下降的差值（喝水）
+                    if waterDifference >= 5 {
                             dayDrinkTotal += waterDifference
                         }
                     }
