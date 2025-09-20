@@ -256,11 +256,12 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                 }
                 
                 // 尝试从缓冲区中查找完整的JSON对象
-                if let jsonStart = self.jsonBuffer.range(of: "{"),
-                   let jsonEnd = self.jsonBuffer.range(of: "}", options: .backwards),
-                   jsonStart.lowerBound <= jsonEnd.upperBound {
+                if let firstBrace = self.jsonBuffer.firstIndex(of: "{"),
+                   let lastBrace = self.jsonBuffer.lastIndex(of: "}"),
+                   firstBrace <= lastBrace {
                     
-                    let jsonString = String(self.jsonBuffer[jsonStart.lowerBound...jsonEnd.upperBound])
+                    // 使用更安全的方式提取JSON字符串
+                    let jsonString = String(self.jsonBuffer[firstBrace...lastBrace])
                     print("提取的JSON字符串: \(jsonString)")
                     
                     // 尝试解析JSON
@@ -296,13 +297,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                         }
                         
                         // 清除已解析的JSON部分
-                        if jsonStart.lowerBound <= jsonEnd.upperBound && jsonEnd.upperBound < self.jsonBuffer.endIndex {
-                            self.jsonBuffer.removeSubrange(jsonStart.lowerBound...jsonEnd.upperBound)
-                        } else {
-                            // 如果索引有问题，清空整个缓冲区
-                            print("JSON索引错误，清空缓冲区")
-                            self.jsonBuffer = ""
-                        }
+                        self.jsonBuffer.removeSubrange(firstBrace...lastBrace)
+                        print("清除JSON部分，剩余缓冲区长度: \(self.jsonBuffer.count)")
                     }
                 }
             }
