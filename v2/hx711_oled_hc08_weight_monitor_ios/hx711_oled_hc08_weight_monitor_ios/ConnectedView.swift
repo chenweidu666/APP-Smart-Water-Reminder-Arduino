@@ -138,7 +138,7 @@ struct ConnectedView: View {
                                 Text("喝水阈值")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text("10ml")
+                                Text("0ml")
                                     .fontWeight(.bold)
                                     .font(.title3)
                             }

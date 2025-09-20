@@ -48,7 +48,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var weeklyAverage: Int = 0   // 单位：毫升
     
     // 杯子重量设置
-    @Published var cupWeight: Int = 100 // 杯子重量（克），可在UI中配置
+    @Published var cupWeight: Int = 95 // 杯子重量（克），可在UI中配置
     
     private var centralManager: CBCentralManager!
     private var foundPeripherals: [CBPeripheral] = []
@@ -380,9 +380,9 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                     let currentWaterWeight = Int(todayRecords[i].weight)
                     let waterDifference = previousWaterWeight - currentWaterWeight
                     
-                    // 只有当水的重量减少（喝水）且差值大于一定阈值时才计算
-                    // 过滤掉小的波动，假设至少减少10ml才算一次喝水
-                    if waterDifference >= 10 {
+                    // 只有当水的重量减少（喝水）时才计算
+                    // 喝水阈值为0，任何重量减少都算喝水
+                    if waterDifference > 0 {
                         drinkCount += 1
                         totalDrinkAmount += waterDifference
                         
@@ -416,7 +416,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                     let waterDifference = previousWaterWeight - currentWaterWeight
                     
                     // 只计算水的重量下降的差值（喝水）
-                    if waterDifference >= 10 {
+                    if waterDifference > 0 {
                         weeklyTotal += waterDifference
                     }
                 }
