@@ -242,6 +242,10 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         if let jsonData = characteristic.value, let string = String(data: jsonData, encoding: .utf8) {
             print("收到数据: \(string)")
             DispatchQueue.main.async {
+                // 更新接收到的数据显示
+                let lines = self.receivedData.split(separator: "\n").suffix(5)
+                self.receivedData = lines.joined(separator: "\n") + "\n" + string
+                
                 // 将接收到的字符串添加到缓冲区
                 self.jsonBuffer += string
                 

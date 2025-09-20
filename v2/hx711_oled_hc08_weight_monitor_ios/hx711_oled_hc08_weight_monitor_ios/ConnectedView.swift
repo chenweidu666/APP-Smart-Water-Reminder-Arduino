@@ -66,6 +66,24 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
+                // 接收到的数据
+                VStack(alignment: .leading) {
+                    Text("接收到的数据:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    ScrollView {
+                        Text(btVM.receivedData)
+                            .font(.system(.body, design: .monospaced))
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                    }
+                    .frame(maxHeight: 200)
+                }
+                .padding()
+                
                 // 杯子重量设置
                 VStack(alignment: .leading) {
                     Text("杯子重量设置:")
