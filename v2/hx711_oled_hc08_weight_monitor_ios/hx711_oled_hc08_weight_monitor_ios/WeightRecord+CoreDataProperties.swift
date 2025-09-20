@@ -18,7 +18,7 @@ extension WeightRecord {
     @NSManaged public var status: String?
     @NSManaged public var object: String?
     @NSManaged public var timestamp: Date?
-    @NSManaged public var deleted: Bool
+    @NSManaged public var isRemoved: Bool
 
 }
 
