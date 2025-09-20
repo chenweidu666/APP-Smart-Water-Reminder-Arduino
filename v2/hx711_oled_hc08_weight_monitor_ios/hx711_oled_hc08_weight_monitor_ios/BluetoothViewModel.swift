@@ -178,7 +178,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         if let data = characteristic.value, let string = String(data: data, encoding: .utf8) {
             print("收到数据: \(string)")
             DispatchQueue.main.async {
-                self.receivedData += string + "\n"
+                let lines = self.receivedData.split(separator: "\n").suffix(3)
+                self.receivedData = lines.joined(separator: "\n") + "\n" + string
             }
         }
     }
