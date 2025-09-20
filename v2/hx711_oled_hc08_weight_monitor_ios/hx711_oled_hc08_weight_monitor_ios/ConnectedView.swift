@@ -297,9 +297,9 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 喝水记录
+                // 当天喝水记录
                 VStack(alignment: .leading) {
-                    Text("喝水记录:")
+                    Text("当天喝水记录:")
                         .font(.headline)
                         .padding(.top)
                     
