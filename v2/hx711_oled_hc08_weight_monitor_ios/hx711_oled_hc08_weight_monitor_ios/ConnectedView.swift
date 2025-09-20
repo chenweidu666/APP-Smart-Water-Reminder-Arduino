@@ -269,39 +269,69 @@ struct ConnectedView: View {
                             .foregroundColor(.gray)
                             .padding()
                     } else {
+                        // 表头
+                        HStack {
+                            Text("喝水前")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                            Text("喝水后")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                            Text("喝水量")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                            Text("时间")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                            Text("操作")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                        
+                        // 数据行
                         ForEach(btVM.drinkRecords) { record in
                             HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("喝水前: \(record.beforeWeight)g")
-                                        .font(.caption)
-                                        .foregroundColor(.blue)
-                                    Text("喝水后: \(record.afterWeight)g")
-                                        .font(.caption)
-                                        .foregroundColor(.green)
-                                    Text("喝水量: \(record.drinkAmount)g")
-                                        .font(.body)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.red)
-                                    Text("时间: \(formatTime(record.timestamp))")
-                                        .font(.caption2)
-                                        .foregroundColor(.gray)
-                                }
+                                Text("\(record.beforeWeight)g")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                    .frame(maxWidth: .infinity)
                                 
-                                Spacer()
+                                Text("\(record.afterWeight)g")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                                    .frame(maxWidth: .infinity)
+                                
+                                Text("\(record.drinkAmount)g")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.red)
+                                    .frame(maxWidth: .infinity)
+                                
+                                Text(formatTime(record.timestamp))
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                    .frame(maxWidth: .infinity)
                                 
                                 Button(action: {
                                     btVM.deleteDrinkRecord(record)
                                 }) {
                                     Image(systemName: "trash")
                                         .foregroundColor(.red)
-                                        .padding(8)
-                                        .background(Color.red.opacity(0.1))
-                                        .cornerRadius(6)
+                                        .font(.caption)
                                 }
+                                .frame(maxWidth: .infinity)
                             }
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
+                            .padding(.vertical, 4)
+                            .padding(.horizontal)
+                            .background(Color.gray.opacity(0.05))
+                            .cornerRadius(4)
                         }
                     }
                 }
