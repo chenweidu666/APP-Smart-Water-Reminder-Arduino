@@ -36,6 +36,9 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var todayDrinkTotal: Int = 0  // 单位：毫升
     @Published var weeklyAverage: Int = 0   // 单位：毫升
     
+    // 杯子重量设置
+    @Published var cupWeight: Int = 100 // 杯子重量（克），可在UI中配置
+    
     private var centralManager: CBCentralManager!
     private var foundPeripherals: [CBPeripheral] = []
     private var targetServiceUUID = CBUUID(string: "FFE0")
@@ -45,7 +48,6 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     private var persistenceController = PersistenceController.shared
     
     // 杯子重量相关
-    private let cupWeight = 200 // 杯子重量（克）
     private var lastValidWeight: Int? = nil // 上次有效的重量记录
 
     override init() {

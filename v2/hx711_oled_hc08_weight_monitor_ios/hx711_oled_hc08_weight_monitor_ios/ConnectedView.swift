@@ -72,39 +72,73 @@ struct ConnectedView: View {
                         .font(.headline)
                         .padding(.top)
                     
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("杯子重量")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("200g")
-                                .fontWeight(.bold)
-                                .font(.title3)
+                    VStack(spacing: 12) {
+                        // 杯子重量配置
+                        HStack {
+                            Text("杯子重量:")
+                                .font(.body)
+                            Spacer()
+                            HStack {
+                                Button("-") {
+                                    if btVM.cupWeight > 50 {
+                                        btVM.cupWeight -= 10
+                                    }
+                                }
+                                .frame(width: 30, height: 30)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(5)
+                                
+                                Text("\(btVM.cupWeight)g")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .frame(minWidth: 60)
+                                
+                                Button("+") {
+                                    if btVM.cupWeight < 500 {
+                                        btVM.cupWeight += 10
+                                    }
+                                }
+                                .frame(width: 30, height: 30)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(5)
+                            }
                         }
-                        .frame(maxWidth: .infinity)
                         
-                        VStack(alignment: .leading) {
-                            Text("存储阈值")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("180g")
-                                .fontWeight(.bold)
-                                .font(.title3)
+                        // 显示阈值信息
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("存储阈值")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Text("\(Int(Double(btVM.cupWeight) * 0.9))g")
+                                    .fontWeight(.bold)
+                                    .font(.title3)
+                            }
+                            .frame(maxWidth: .infinity)
+                            
+                            VStack(alignment: .leading) {
+                                Text("喝水阈值")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Text("10g")
+                                    .fontWeight(.bold)
+                                    .font(.title3)
+                            }
+                            .frame(maxWidth: .infinity)
+                            
+                            VStack(alignment: .leading) {
+                                Text("范围")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Text("50-500g")
+                                    .fontWeight(.bold)
+                                    .font(.title3)
+                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
-                        
-                        VStack(alignment: .leading) {
-                            Text("喝水阈值")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text("10g")
-                                .fontWeight(.bold)
-                                .font(.title3)
-                        }
-                        .frame(maxWidth: .infinity)
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color.blue.opacity(0.1))
                     .cornerRadius(8)
                 }
                 .padding()
