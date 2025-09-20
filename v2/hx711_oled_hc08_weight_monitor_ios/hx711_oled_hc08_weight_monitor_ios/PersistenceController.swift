@@ -52,12 +52,12 @@ struct PersistenceController {
         timestampAttribute.name = "timestamp"
         timestampAttribute.attributeType = .dateAttributeType
         
-        let isDeletedAttribute = NSAttributeDescription()
-        isDeletedAttribute.name = "isDeleted"
-        isDeletedAttribute.attributeType = .booleanAttributeType
-        isDeletedAttribute.defaultValue = false
+        let deletedAttribute = NSAttributeDescription()
+        deletedAttribute.name = "deleted"
+        deletedAttribute.attributeType = .booleanAttributeType
+        deletedAttribute.defaultValue = false
         
-        weightRecordEntity.properties = [weightAttribute, statusAttribute, objectAttribute, timestampAttribute, isDeletedAttribute]
+        weightRecordEntity.properties = [weightAttribute, statusAttribute, objectAttribute, timestampAttribute, deletedAttribute]
         
         // 设置模型实体
         model.entities = [weightRecordEntity]
