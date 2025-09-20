@@ -217,7 +217,7 @@ struct ConnectedView: View {
                         
                         // 表头：日期
                         HStack {
-                            ForEach(0..<7, id: \.self) { index in
+                            ForEach((0..<7).reversed(), id: \.self) { index in
                                 Text(formatWeekDay(index))
                                     .font(.caption)
                                     .fontWeight(.bold)
@@ -228,7 +228,7 @@ struct ConnectedView: View {
                         
                         // 数据行：喝水量
                         HStack {
-                            ForEach(0..<7, id: \.self) { index in
+                            ForEach((0..<7).reversed(), id: \.self) { index in
                                 VStack {
                                     Text("\(btVM.weeklyDrinkData[index])g")
                                         .font(.caption)
