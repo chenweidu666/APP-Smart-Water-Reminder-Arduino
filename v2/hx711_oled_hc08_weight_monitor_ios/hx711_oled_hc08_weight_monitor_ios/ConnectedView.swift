@@ -66,6 +66,49 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
+                // 杯子重量设置
+                VStack(alignment: .leading) {
+                    Text("杯子重量设置:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("杯子重量")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("200g")
+                                .fontWeight(.bold)
+                                .font(.title3)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack(alignment: .leading) {
+                            Text("存储阈值")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("180g")
+                                .fontWeight(.bold)
+                                .font(.title3)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack(alignment: .leading) {
+                            Text("喝水阈值")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text("10g")
+                                .fontWeight(.bold)
+                                .font(.title3)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                }
+                .padding()
+                
                 // 当天喝水统计
                 VStack(alignment: .leading) {
                     Text("今天喝水统计:")
