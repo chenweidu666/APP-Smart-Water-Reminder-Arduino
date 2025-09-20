@@ -256,6 +256,55 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
+                // 喝水记录
+                VStack(alignment: .leading) {
+                    Text("喝水记录:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    if btVM.drinkRecords.isEmpty {
+                        Text("暂无喝水记录")
+                            .foregroundColor(.gray)
+                            .padding()
+                    } else {
+                        ForEach(btVM.drinkRecords) { record in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("喝水前: \(record.beforeWeight)ml")
+                                        .font(.caption)
+                                        .foregroundColor(.blue)
+                                    Text("喝水后: \(record.afterWeight)ml")
+                                        .font(.caption)
+                                        .foregroundColor(.green)
+                                    Text("喝水量: \(record.drinkAmount)ml")
+                                        .font(.body)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.red)
+                                    Text("时间: \(formatTime(record.timestamp))")
+                                        .font(.caption2)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    btVM.deleteDrinkRecord(record)
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                        .padding(8)
+                                        .background(Color.red.opacity(0.1))
+                                        .cornerRadius(6)
+                                }
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                        }
+                    }
+                }
+                .padding()
+                
                 // 最近的记录（注释掉）
                 /*
                 VStack(alignment: .leading) {
@@ -304,6 +353,12 @@ struct ConnectedView: View {
         guard let date = date else { return "未知时间" }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.string(from: date)
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
         return formatter.string(from: date)
     }
 }

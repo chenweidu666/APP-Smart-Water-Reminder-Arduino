@@ -14,6 +14,16 @@ struct WeightData: Identifiable {
     let timestamp = Date()
 }
 
+struct DrinkRecord: Identifiable {
+    let id = UUID()
+    let beforeWeight: Int  // 喝水前重量
+    let afterWeight: Int   // 喝水后重量
+    let drinkAmount: Int   // 喝水量
+    let timestamp: Date
+    let beforeRecord: WeightRecord
+    let afterRecord: WeightRecord
+}
+
 struct BluetoothDevice: Identifiable {
     let id = UUID()
     let name: String
@@ -30,6 +40,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var isConnecting: Bool = false
     @Published var latestWeightData: WeightData? = nil
     @Published var recentRecords: [WeightRecord] = []
+    @Published var drinkRecords: [DrinkRecord] = []  // 喝水记录
     
     // 喝水统计
     @Published var todayDrinkCount: Int = 0
@@ -361,6 +372,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             // 计算今天的喝水次数和总量（数据库中存储的是水的重量）
             var drinkCount = 0
             var totalDrinkAmount = 0
+            var todayDrinkRecords: [DrinkRecord] = []
             
             if todayRecords.count > 1 {
                 for i in 1..<todayRecords.count {
@@ -373,6 +385,17 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                     if waterDifference >= 10 {
                         drinkCount += 1
                         totalDrinkAmount += waterDifference
+                        
+                        // 创建喝水记录
+                        let drinkRecord = DrinkRecord(
+                            beforeWeight: previousWaterWeight,
+                            afterWeight: currentWaterWeight,
+                            drinkAmount: waterDifference,
+                            timestamp: todayRecords[i].timestamp ?? Date(),
+                            beforeRecord: todayRecords[i-1],
+                            afterRecord: todayRecords[i]
+                        )
+                        todayDrinkRecords.append(drinkRecord)
                     }
                 }
             }
@@ -406,10 +429,29 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                 self.todayDrinkCount = drinkCount
                 self.todayDrinkTotal = totalDrinkAmount
                 self.weeklyAverage = weeklyAverage
+                self.drinkRecords = todayDrinkRecords.reversed() // 最新的在前面
             }
             
         } catch {
             print("计算喝水统计失败: \(error.localizedDescription)")
+        }
+    }
+    
+    // 删除喝水记录
+    func deleteDrinkRecord(_ drinkRecord: DrinkRecord) {
+        let context = persistenceController.container.viewContext
+        
+        // 删除相关的WeightRecord
+        context.delete(drinkRecord.beforeRecord)
+        context.delete(drinkRecord.afterRecord)
+        
+        do {
+            try context.save()
+            print("喝水记录已删除")
+            // 重新计算统计
+            self.calculateDrinkStatistics()
+        } catch {
+            print("删除喝水记录失败: \(error.localizedDescription)")
         }
     }
 }
