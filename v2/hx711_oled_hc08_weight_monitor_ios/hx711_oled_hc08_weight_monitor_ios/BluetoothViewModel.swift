@@ -340,6 +340,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     func loadRecentRecords() {
         let context = persistenceController.container.viewContext
         let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        request.predicate = NSPredicate(format: "isDeleted == NO")
         request.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: false)]
         request.fetchLimit = 3
         
@@ -363,7 +364,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
         
         let todayRequest: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
-        todayRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@", today as NSDate, tomorrow as NSDate)
+        todayRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@ AND isDeleted == NO", today as NSDate, tomorrow as NSDate)
         todayRequest.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: true)]
         
         do {
@@ -403,7 +404,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             // 计算本周平均
             let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: today)!
             let weeklyRequest: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
-            weeklyRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@", weekAgo as NSDate, tomorrow as NSDate)
+            weeklyRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@ AND isDeleted == NO", weekAgo as NSDate, tomorrow as NSDate)
             weeklyRequest.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: true)]
             
             let weeklyRecords = try context.fetch(weeklyRequest)
@@ -441,9 +442,9 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     func deleteDrinkRecord(_ drinkRecord: DrinkRecord) {
         let context = persistenceController.container.viewContext
         
-        // 删除相关的WeightRecord
-        context.delete(drinkRecord.beforeRecord)
-        context.delete(drinkRecord.afterRecord)
+        // 标记相关的WeightRecord为已删除（软删除）
+        drinkRecord.beforeRecord.isDeleted = true
+        drinkRecord.afterRecord.isDeleted = true
         
         do {
             try context.save()
