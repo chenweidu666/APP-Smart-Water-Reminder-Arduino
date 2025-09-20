@@ -33,57 +33,44 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 接收到的数据
-                VStack(alignment: .leading) {
-                    Text("接收到的数据:")
-                        .font(.headline)
-                        .padding(.top)
-                    
-                    ScrollView {
-                        Text(btVM.receivedData)
-                            .font(.system(.body, design: .monospaced))
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                    .frame(maxHeight: 300)
-                }
-                .padding()
                 
                 // 解析后的数据表格
                 VStack(alignment: .leading) {
-                    Text("解析后的数据:")
+                    Text("当前数据:")
                         .font(.headline)
                         .padding(.top)
                     
                     if let weightData = btVM.latestWeightData {
-                        Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 10) {
-                            GridRow {
-                                Text("重量:")
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("重量")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Text("\(weightData.weight)g")
                                     .fontWeight(.bold)
-                                Text("\(weightData.weight)")
+                                    .font(.title2)
                             }
-                            GridRow {
-                                Text("状态:")
-                                    .fontWeight(.bold)
+                            .frame(maxWidth: .infinity)
+                            
+                            VStack(alignment: .leading) {
+                                Text("状态")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
                                 Text(weightData.status)
-                            }
-                            GridRow {
-                                Text("物体:")
                                     .fontWeight(.bold)
+                                    .font(.title2)
+                            }
+                            .frame(maxWidth: .infinity)
+                            
+                            VStack(alignment: .leading) {
+                                Text("物体")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
                                 Text(weightData.object)
-                            }
-                            GridRow {
-                                Text("时间:")
                                     .fontWeight(.bold)
-                                Text("\(weightData.time)")
+                                    .font(.title2)
                             }
-                            GridRow {
-                                Text("系统:")
-                                    .fontWeight(.bold)
-                                Text(weightData.system)
-                            }
+                            .frame(maxWidth: .infinity)
                         }
                         .padding()
                         .background(Color.gray.opacity(0.1))
