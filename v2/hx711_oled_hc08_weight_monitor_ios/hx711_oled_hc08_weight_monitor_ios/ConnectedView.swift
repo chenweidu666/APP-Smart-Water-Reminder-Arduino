@@ -66,6 +66,7 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
+                /*
                 // 接收到的数据
                 VStack(alignment: .leading) {
                     Text("接收到的数据:")
@@ -83,6 +84,7 @@ struct ConnectedView: View {
                     .frame(maxHeight: 200)
                 }
                 .padding()
+                */
                 
                 // 杯子重量设置
                 VStack(alignment: .leading) {
