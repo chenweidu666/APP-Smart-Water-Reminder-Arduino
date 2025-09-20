@@ -46,6 +46,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var todayDrinkCount: Int = 0
     @Published var todayDrinkTotal: Int = 0  // 单位：克
     @Published var weeklyAverage: Int = 0   // 单位：克
+    @Published var weeklyDrinkData: [Int] = Array(repeating: 0, count: 7) // 过去7天的每日喝水量
     
     // 杯子重量设置
     @Published var cupWeight: Int = 95 // 杯子重量（克），可在UI中配置
@@ -401,35 +402,49 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                 }
             }
             
-            // 计算本周平均
-            let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: today)!
-            let weeklyRequest: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
-            weeklyRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@ AND isRemoved == NO", weekAgo as NSDate, tomorrow as NSDate)
-            weeklyRequest.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: true)]
+            // 计算过去7天的每日喝水量
+            var weeklyDrinkData: [Int] = Array(repeating: 0, count: 7)
+            let calendar = Calendar.current
             
-            let weeklyRecords = try context.fetch(weeklyRequest)
-            var weeklyTotal = 0
-            
-            if weeklyRecords.count > 1 {
-                for i in 1..<weeklyRecords.count {
-                    let previousWaterWeight = Int(weeklyRecords[i-1].weight)
-                    let currentWaterWeight = Int(weeklyRecords[i].weight)
-                    let waterDifference = previousWaterWeight - currentWaterWeight
-                    
-                    // 只计算水的重量下降的差值（喝水）
-                    if waterDifference > 0 {
-                        weeklyTotal += waterDifference
+            for dayOffset in 0..<7 {
+                let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today)!
+                let targetStart = calendar.startOfDay(for: targetDate)
+                let targetEnd = calendar.date(byAdding: .day, value: 1, to: targetStart)!
+                
+                let dayRequest: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+                dayRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@ AND isRemoved == NO", targetStart as NSDate, targetEnd as NSDate)
+                dayRequest.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: true)]
+                
+                let dayRecords = try context.fetch(dayRequest)
+                var dayDrinkTotal = 0
+                
+                if dayRecords.count > 1 {
+                    for i in 1..<dayRecords.count {
+                        let previousWaterWeight = Int(dayRecords[i-1].weight)
+                        let currentWaterWeight = Int(dayRecords[i].weight)
+                        let waterDifference = previousWaterWeight - currentWaterWeight
+                        
+                        // 只计算水的重量下降的差值（喝水）
+                        if waterDifference > 0 {
+                            dayDrinkTotal += waterDifference
+                        }
                     }
                 }
+                
+                // 数组索引：0=今天，1=昨天，...，6=6天前
+                weeklyDrinkData[dayOffset] = dayDrinkTotal
             }
             
-            let weeklyAverage = weeklyRecords.count > 0 ? weeklyTotal / 7 : 0
+            // 计算7日平均（过去6天 + 今天）
+            let weeklyTotal = weeklyDrinkData.reduce(0, +)
+            let weeklyAverage = weeklyTotal / 7
             
             DispatchQueue.main.async {
                 print("统计计算完成: 今天喝水次数=\(drinkCount), 总量=\(totalDrinkAmount)g, 本周平均=\(weeklyAverage)g")
                 self.todayDrinkCount = drinkCount
                 self.todayDrinkTotal = totalDrinkAmount
                 self.weeklyAverage = weeklyAverage
+                self.weeklyDrinkData = weeklyDrinkData
                 self.drinkRecords = todayDrinkRecords.reversed() // 最新的在前面
             }
             

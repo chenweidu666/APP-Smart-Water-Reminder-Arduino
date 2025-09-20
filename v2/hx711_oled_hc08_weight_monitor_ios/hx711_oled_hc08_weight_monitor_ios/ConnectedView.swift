@@ -163,48 +163,87 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 当天喝水统计
+                // 喝水统计
                 VStack(alignment: .leading) {
-                    Text("今天喝水统计:")
+                    Text("喝水统计:")
                         .font(.headline)
                         .padding(.top)
                     
+                    // 今天统计
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("喝水次数")
+                            Text("今天喝水次数")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(btVM.todayDrinkCount) 次")
                                 .fontWeight(.bold)
-                                .font(.title2)
+                                .font(.title3)
                                 .foregroundColor(.blue)
                         }
                         .frame(maxWidth: .infinity)
                         
                         VStack(alignment: .leading) {
-                            Text("喝水总量")
+                            Text("今天喝水总量")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(btVM.todayDrinkTotal) g")
                                 .fontWeight(.bold)
-                                .font(.title2)
+                                .font(.title3)
                                 .foregroundColor(.green)
                         }
                         .frame(maxWidth: .infinity)
                         
                         VStack(alignment: .leading) {
-                            Text("本周平均")
+                            Text("7日平均")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(btVM.weeklyAverage) g")
                                 .fontWeight(.bold)
-                                .font(.title2)
+                                .font(.title3)
                                 .foregroundColor(.orange)
                         }
                         .frame(maxWidth: .infinity)
                     }
                     .padding()
                     .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
+                    
+                    // 过去7天喝水量表格
+                    VStack(spacing: 8) {
+                        Text("过去7天喝水量")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        // 表头：日期
+                        HStack {
+                            ForEach(0..<7, id: \.self) { index in
+                                Text(formatWeekDay(index))
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .frame(maxWidth: .infinity)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        
+                        // 数据行：喝水量
+                        HStack {
+                            ForEach(0..<7, id: \.self) { index in
+                                VStack {
+                                    Text("\(btVM.weeklyDrinkData[index])g")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(btVM.weeklyDrinkData[index] > 0 ? .primary : .gray)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
+                                .background(btVM.weeklyDrinkData[index] > 0 ? Color.green.opacity(0.1) : Color.gray.opacity(0.05))
+                                .cornerRadius(4)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.05))
                     .cornerRadius(8)
                 }
                 .padding()
@@ -392,6 +431,21 @@ struct ConnectedView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
         return formatter.string(from: date)
+    }
+    
+    private func formatWeekDay(_ dayOffset: Int) -> String {
+        let calendar = Calendar.current
+        let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: Date())!
+        let formatter = DateFormatter()
+        
+        if dayOffset == 0 {
+            return "今天"
+        } else if dayOffset == 1 {
+            return "昨天"
+        } else {
+            formatter.dateFormat = "M/d"
+            return formatter.string(from: targetDate)
+        }
     }
 }
 
