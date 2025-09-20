@@ -10,6 +10,7 @@ import CoreBluetooth
 
 struct ContentView: View {
     @StateObject private var btVM = BluetoothViewModel()
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -30,10 +31,11 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                 }
                 
+                // 控制按钮
                 Button(action: {
                     btVM.startScan()
                 }) {
-                    Text("搜索蓝牙设备")
+                    Text("搜索设备")
                         .font(.headline)
                         .padding()
                         .frame(maxWidth: .infinity)
@@ -42,7 +44,9 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
                 .disabled(!btVM.isBluetoothPoweredOn)
+                .padding(.horizontal)
                 
+                // 设备列表
                 List(btVM.devices) { device in
                     HStack {
                         Image(systemName: "dot.radiowaves.left.and.right")
@@ -50,13 +54,27 @@ struct ContentView: View {
                         VStack(alignment: .leading) {
                             Text(device.name)
                                 .font(.body)
+                            if let connectedDevice = btVM.connectedDevice, connectedDevice.id == device.id {
+                                Text("已连接")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if !btVM.isConnected || btVM.connectedDevice?.id != device.id {
+                            btVM.connectToDevice(device)
                         }
                     }
                 }
                 .listStyle(InsetGroupedListStyle())
             }
             .navigationTitle("蓝牙设备")
-            .padding()
+            .fullScreenCover(isPresented: $btVM.isConnected) {
+                ConnectedView()
+                    .environmentObject(btVM)
+            }
         }
     }
 }
