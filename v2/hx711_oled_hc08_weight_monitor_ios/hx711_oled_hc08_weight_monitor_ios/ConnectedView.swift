@@ -298,12 +298,12 @@ struct ConnectedView: View {
                         // 数据行
                         ForEach(btVM.drinkRecords) { record in
                             HStack {
-                                Text("\(record.beforeWeight)g")
+                                Text("\(record.beforeWeight + btVM.cupWeight)g")
                                     .font(.caption)
                                     .foregroundColor(.blue)
                                     .frame(maxWidth: .infinity)
                                 
-                                Text("\(record.afterWeight)g")
+                                Text("\(record.afterWeight + btVM.cupWeight)g")
                                     .font(.caption)
                                     .foregroundColor(.green)
                                     .frame(maxWidth: .infinity)
