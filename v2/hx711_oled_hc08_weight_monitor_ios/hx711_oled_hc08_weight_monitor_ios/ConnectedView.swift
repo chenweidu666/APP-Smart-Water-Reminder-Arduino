@@ -5,7 +5,8 @@ struct ConnectedView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
+            ScrollView {
+                VStack {
                 // 连接状态和断开按钮
                 HStack {
                     VStack(alignment: .leading) {
@@ -126,8 +127,7 @@ struct ConnectedView: View {
                     }
                 }
                 .padding()
-                
-                Spacer()
+                }
             }
             .navigationTitle("数据接收")
             .navigationBarTitleDisplayMode(.inline)
