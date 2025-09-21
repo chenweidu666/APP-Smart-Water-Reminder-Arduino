@@ -204,15 +204,16 @@ struct ConnectedView: View {
                         .padding(.top)
                     
                     VStack(spacing: 12) {
-                        // 杯子重量配置
+                        // 杯子重量配置 (已注释)
+                        /*
                         HStack {
                             Text("杯子重量:")
                                 .font(.body)
                             Spacer()
                             HStack {
                                 Button("-") {
-                                    if btVM.cupWeight > 50 {
-                                        btVM.cupWeight -= 10
+                                    if btVM.cupWeight > 0 {
+                                        btVM.cupWeight -= 5
                                     }
                                 }
                                 .frame(width: 30, height: 30)
@@ -226,7 +227,7 @@ struct ConnectedView: View {
                                 
                                 Button("+") {
                                     if btVM.cupWeight < 500 {
-                                        btVM.cupWeight += 10
+                                        btVM.cupWeight += 5
                                     }
                                 }
                                 .frame(width: 30, height: 30)
@@ -234,6 +235,7 @@ struct ConnectedView: View {
                                 .cornerRadius(5)
                             }
                         }
+                        */
                         
                         // 显示阈值信息
                         HStack {
