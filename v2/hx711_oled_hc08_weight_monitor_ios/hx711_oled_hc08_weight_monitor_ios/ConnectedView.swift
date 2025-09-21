@@ -197,46 +197,13 @@ struct ConnectedView: View {
                 }
                 .padding()
                 
-                // 3. 杯子重量设置
+                // 3. 设置信息
                 VStack(alignment: .leading) {
-                    Text("杯子重量设置:")
+                    Text("设置信息:")
                         .font(.headline)
                         .padding(.top)
                     
                     VStack(spacing: 12) {
-                        // 杯子重量配置 (已注释)
-                        /*
-                        HStack {
-                            Text("杯子重量:")
-                                .font(.body)
-                            Spacer()
-                            HStack {
-                                Button("-") {
-                                    if btVM.cupWeight > 0 {
-                                        btVM.cupWeight -= 5
-                                    }
-                                }
-                                .frame(width: 30, height: 30)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(5)
-                                
-                                Text("\(btVM.cupWeight)g")
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                    .frame(minWidth: 60)
-                                
-                                Button("+") {
-                                    if btVM.cupWeight < 500 {
-                                        btVM.cupWeight += 5
-                                    }
-                                }
-                                .frame(width: 30, height: 30)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(5)
-                            }
-                        }
-                        */
-                        
                         // 显示阈值信息
                         HStack {
                             VStack(alignment: .leading) {
@@ -263,7 +230,7 @@ struct ConnectedView: View {
                                 Text("存储内容")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text("水的重量")
+                                Text("原始重量")
                                     .fontWeight(.bold)
                                     .font(.title3)
                             }
@@ -316,12 +283,12 @@ struct ConnectedView: View {
                         // 数据行
                         ForEach(btVM.drinkRecords) { record in
                             HStack {
-                                Text("\(record.beforeWeight + btVM.cupWeight)g")
+                                Text("\(record.beforeWeight)g")
                                     .font(.caption)
                                     .foregroundColor(.blue)
                                     .frame(maxWidth: .infinity)
                                 
-                                Text("\(record.afterWeight + btVM.cupWeight)g")
+                                Text("\(record.afterWeight)g")
                                     .font(.caption)
                                     .foregroundColor(.green)
                                     .frame(maxWidth: .infinity)

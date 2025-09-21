@@ -48,8 +48,6 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var weeklyAverage: Int = 0   // 单位：克
     @Published var weeklyDrinkData: [Int] = Array(repeating: 0, count: 7) // 过去7天的每日喝水量
     
-    // 杯子重量设置
-    @Published var cupWeight: Int = 95 // 杯子重量（克），可在UI中配置
     
     private var centralManager: CBCentralManager!
     private var foundPeripherals: [CBPeripheral] = []
@@ -288,12 +286,11 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                         self.latestWeightData = weightData
                         
                         // 只记录stable状态且第一次的数据，并且重量要大于10g
-                        let currentCupWeight = self.cupWeight
                         print("数据处理: weight=\(weight), status=\(status), object=\(object), lastStableObject=\(self.lastStableObject ?? "nil"), threshold=10")
                         
                         if status == "Stable" && self.lastStableObject != object && weight >= 10 {
                             print("保存记录: 符合条件，开始保存")
-                            self.saveWeightRecord(weight: weight, status: status, object: object, cupWeight: currentCupWeight)
+                            self.saveWeightRecord(weight: weight, status: status, object: object)
                             self.lastStableObject = object
                             print("保存记录: 完成，开始加载记录")
                             self.loadRecentRecords()
@@ -318,20 +315,19 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     }
     
     // 保存重量记录到数据库
-    private func saveWeightRecord(weight: Int, status: String, object: String, cupWeight: Int) {
+    private func saveWeightRecord(weight: Int, status: String, object: String) {
         let context = persistenceController.container.viewContext
         let weightRecord = WeightRecord(context: context)
         
-        // 存储时减去杯子重量，只保存水的重量
-        let waterWeight = max(0, weight - cupWeight)
-        weightRecord.weight = Int32(waterWeight)
+        // 直接保存原始重量
+        weightRecord.weight = Int32(weight)
         weightRecord.status = status
         weightRecord.object = object
         weightRecord.timestamp = Date() // 使用手机当前时间
         
         do {
             try context.save()
-            print("重量记录已保存: 原始重量=\(weight)g, 杯子重量=\(cupWeight)g, 水的重量=\(waterWeight)g, status=\(status), object=\(object)")
+            print("重量记录已保存: 重量=\(weight)g, status=\(status), object=\(object)")
         } catch {
             print("保存重量记录失败: \(error.localizedDescription)")
         }
@@ -371,28 +367,28 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         do {
             let todayRecords = try context.fetch(todayRequest)
             
-            // 计算今天的喝水次数和总量（数据库中存储的是水的重量）
+            // 计算今天的喝水次数和总量（数据库中存储的是原始重量）
             var drinkCount = 0
             var totalDrinkAmount = 0
             var todayDrinkRecords: [DrinkRecord] = []
             
             if todayRecords.count > 1 {
                 for i in 1..<todayRecords.count {
-                    let previousWaterWeight = Int(todayRecords[i-1].weight)
-                    let currentWaterWeight = Int(todayRecords[i].weight)
-                    let waterDifference = previousWaterWeight - currentWaterWeight
+                    let previousWeight = Int(todayRecords[i-1].weight)
+                    let currentWeight = Int(todayRecords[i].weight)
+                    let weightDifference = previousWeight - currentWeight
                     
-                    // 只有当水的重量减少（喝水）且差值大于5g时才计算
+                    // 只有当重量减少（喝水）且差值大于5g时才计算
                     // 过滤掉小的波动，至少减少5g才算喝水
-                    if waterDifference >= 5 {
+                    if weightDifference >= 5 {
                         drinkCount += 1
-                        totalDrinkAmount += waterDifference
+                        totalDrinkAmount += weightDifference
                         
                         // 创建喝水记录
                         let drinkRecord = DrinkRecord(
-                            beforeWeight: previousWaterWeight,
-                            afterWeight: currentWaterWeight,
-                            drinkAmount: waterDifference,
+                            beforeWeight: previousWeight,
+                            afterWeight: currentWeight,
+                            drinkAmount: weightDifference,
                             timestamp: todayRecords[i].timestamp ?? Date(),
                             beforeRecord: todayRecords[i-1],
                             afterRecord: todayRecords[i]
@@ -420,13 +416,13 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                 
                 if dayRecords.count > 1 {
                     for i in 1..<dayRecords.count {
-                        let previousWaterWeight = Int(dayRecords[i-1].weight)
-                        let currentWaterWeight = Int(dayRecords[i].weight)
-                        let waterDifference = previousWaterWeight - currentWaterWeight
+                        let previousWeight = Int(dayRecords[i-1].weight)
+                        let currentWeight = Int(dayRecords[i].weight)
+                        let weightDifference = previousWeight - currentWeight
                         
-                    // 只计算水的重量下降的差值（喝水）
-                    if waterDifference >= 5 {
-                            dayDrinkTotal += waterDifference
+                        // 只计算重量下降的差值（喝水）
+                        if weightDifference >= 5 {
+                            dayDrinkTotal += weightDifference
                         }
                     }
                 }
@@ -468,6 +464,45 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             self.calculateDrinkStatistics()
         } catch {
             print("删除喝水记录失败: \(error.localizedDescription)")
+        }
+    }
+    
+    // 删除异常的重量记录（用于删除95g等异常数据）
+    func deleteAbnormalWeightRecords(targetWeight: Int) {
+        let context = persistenceController.container.viewContext
+        let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        request.predicate = NSPredicate(format: "weight == %d AND isRemoved == NO", Int32(targetWeight))
+        
+        do {
+            let records = try context.fetch(request)
+            for record in records {
+                record.isRemoved = true
+                print("标记删除异常记录: 重量=\(record.weight)g, 时间=\(record.timestamp ?? Date())")
+            }
+            
+            try context.save()
+            print("已删除 \(records.count) 条重量为 \(targetWeight)g 的异常记录")
+            
+            // 重新加载数据
+            self.loadRecentRecords()
+            self.calculateDrinkStatistics()
+        } catch {
+            print("删除异常重量记录失败: \(error.localizedDescription)")
+        }
+    }
+    
+    // 获取所有重量记录（用于调试）
+    func getAllWeightRecords() -> [WeightRecord] {
+        let context = persistenceController.container.viewContext
+        let request: NSFetchRequest<WeightRecord> = WeightRecord.fetchRequest()
+        request.predicate = NSPredicate(format: "isRemoved == NO")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \WeightRecord.timestamp, ascending: false)]
+        
+        do {
+            return try context.fetch(request)
+        } catch {
+            print("获取重量记录失败: \(error.localizedDescription)")
+            return []
         }
     }
 }
