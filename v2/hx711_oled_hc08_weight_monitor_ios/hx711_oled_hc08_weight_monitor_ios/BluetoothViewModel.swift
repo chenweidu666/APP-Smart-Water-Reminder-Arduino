@@ -287,11 +287,11 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                         let weightData = WeightData(weight: weight, status: status, object: object, time: 0, system: system)
                         self.latestWeightData = weightData
                         
-                        // 只记录stable状态且第一次的数据，并且重量要大于杯子重量的90%
+                        // 只记录stable状态且第一次的数据，并且重量要大于10g
                         let currentCupWeight = self.cupWeight
-                        print("数据处理: weight=\(weight), status=\(status), object=\(object), lastStableObject=\(self.lastStableObject ?? "nil"), threshold=\(Int(Double(currentCupWeight) * 0.9))")
+                        print("数据处理: weight=\(weight), status=\(status), object=\(object), lastStableObject=\(self.lastStableObject ?? "nil"), threshold=10")
                         
-                        if status == "Stable" && self.lastStableObject != object && weight >= Int(Double(currentCupWeight) * 0.9) {
+                        if status == "Stable" && self.lastStableObject != object && weight >= 10 {
                             print("保存记录: 符合条件，开始保存")
                             self.saveWeightRecord(weight: weight, status: status, object: object, cupWeight: currentCupWeight)
                             self.lastStableObject = object

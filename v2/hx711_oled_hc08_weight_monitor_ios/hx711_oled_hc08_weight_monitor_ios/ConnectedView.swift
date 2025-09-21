@@ -241,7 +241,7 @@ struct ConnectedView: View {
                                 Text("存储阈值")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                Text("\(Int(Double(btVM.cupWeight) * 0.9))g")
+                                Text("10g")
                                     .fontWeight(.bold)
                                     .font(.title3)
                             }
