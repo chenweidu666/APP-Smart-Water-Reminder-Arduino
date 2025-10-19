@@ -180,9 +180,13 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     // 连接设备
     func connectToDevice(_ device: BluetoothDevice) {
         serialBluetoothManager.stopScan()
-        serialBluetoothManager.connect(to: device.peripheral)
-        errorMessage = "正在连接..."
-        isConnecting = true
+        if let peripheral = device.peripheral {
+            serialBluetoothManager.connect(to: peripheral)
+            errorMessage = "正在连接..."
+            isConnecting = true
+        } else {
+            errorMessage = "设备连接信息无效"
+        }
     }
     
     // 断开连接
@@ -194,7 +198,9 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         print("连接成功: \(peripheral.name ?? "未知设备")")
         DispatchQueue.main.async {
-            self.connectedDevice = self.devices.first { $0.peripheral == peripheral }
+            self.connectedDevice = self.devices.first { device in
+                device.peripheral == peripheral
+            }
             self.isConnected = true
             self.isConnecting = false
             self.errorMessage = "连接成功"
