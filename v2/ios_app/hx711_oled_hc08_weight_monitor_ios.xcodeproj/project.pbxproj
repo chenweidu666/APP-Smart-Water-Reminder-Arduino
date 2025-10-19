@@ -9,6 +9,7 @@
 /* Begin PBXFileReference section */
 		1F0F85642E7EC80C00816B2F /* WeightMonitor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeightMonitor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1F6AC9F62EA4D25800D0A8CD /* hx711_oled_hc08_weight_monitor_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = hx711_oled_hc08_weight_monitor_ios.xcodeproj; sourceTree = "<group>"; };
+		1F6ACA292EA4D27C00D0A8CD /* hx711_oled_hc08_weight_monitor_ios.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = hx711_oled_hc08_weight_monitor_ios.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -47,6 +48,11 @@
 			sourceTree = "<group>";
 		};
 		1F6AC9F82EA4D25800D0A8CD /* Products */ = {
+			isa = PBXGroup;
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1F6ACA2B2EA4D27C00D0A8CD /* Products */ = {
 			isa = PBXGroup;
 			name = Products;
 			sourceTree = "<group>";
@@ -104,6 +110,10 @@
 			productRefGroup = 1F0F85652E7EC80C00816B2F /* Products */;
 			projectDirPath = "";
 			projectReferences = (
+				{
+					ProductGroup = 1F6ACA2B2EA4D27C00D0A8CD /* Products */;
+					ProjectRef = 1F6ACA292EA4D27C00D0A8CD /* hx711_oled_hc08_weight_monitor_ios.xcodeproj */;
+				},
 				{
 					ProductGroup = 1F6AC9F82EA4D25800D0A8CD /* Products */;
 					ProjectRef = 1F6AC9F62EA4D25800D0A8CD /* hx711_oled_hc08_weight_monitor_ios.xcodeproj */;
