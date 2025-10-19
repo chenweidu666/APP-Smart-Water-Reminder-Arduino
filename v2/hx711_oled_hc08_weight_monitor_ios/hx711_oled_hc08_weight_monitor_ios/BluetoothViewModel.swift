@@ -281,18 +281,45 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         jsonBuffer += data
         
         // 限制缓冲区大小，防止内存问题
-        if jsonBuffer.count > 1000 {
+        if jsonBuffer.count > 2000 {
             print("缓冲区过大，清空缓冲区")
             jsonBuffer = ""
+            return
         }
         
-        // 尝试解析Arduino发送的数据格式
-        // Arduino发送格式示例：
+        // 尝试从缓冲区中查找完整的数据块
+        // Arduino发送格式：
+        // ================
         // Weight: 100 g
         // Status: Stable
         // Object: Detected
+        // Time: 800 s
+        // System Running
+        // ================
         
-        let lines = data.components(separatedBy: .newlines)
+        // 查找完整的数据块（以===============开始和结束）
+        let separator = "==============="
+        let parts = jsonBuffer.components(separatedBy: separator)
+        
+        // 处理完整的数据块（至少3个部分：前缀、数据、后缀）
+        if parts.count >= 3 {
+            for i in 1..<parts.count-1 {
+                let dataBlock = parts[i].trimmingCharacters(in: .whitespacesAndNewlines)
+                if !dataBlock.isEmpty {
+                    parseDataBlock(dataBlock)
+                }
+            }
+            
+            // 保留最后一个不完整的数据块
+            jsonBuffer = separator + parts.last!
+        }
+    }
+    
+    // 解析单个数据块
+    private func parseDataBlock(_ dataBlock: String) {
+        print("解析数据块: \(dataBlock)")
+        
+        let lines = dataBlock.components(separatedBy: .newlines)
         var weight: Int?
         var status: String?
         var object: String?
@@ -323,7 +350,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             let weightData = WeightData(weight: weight, status: status, object: object, time: 0, system: "Arduino")
             latestWeightData = weightData
             
-            print("解析数据: weight=\(weight), status=\(status), object=\(object)")
+            print("解析成功: weight=\(weight), status=\(status), object=\(object)")
             
             // 只记录stable状态且第一次的数据，并且重量要大于10g
             if status == "Stable" && lastStableObject != object && weight >= 10 {
@@ -342,6 +369,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             } else {
                 print("跳过记录: 不满足保存条件")
             }
+        } else {
+            print("数据不完整，跳过: weight=\(weight?.description ?? "nil"), status=\(status ?? "nil"), object=\(object ?? "nil")")
         }
     }
     
