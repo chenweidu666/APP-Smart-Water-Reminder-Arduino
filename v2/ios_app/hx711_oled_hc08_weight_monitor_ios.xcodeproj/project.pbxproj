@@ -11,9 +11,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1F0F85662E7EC80C00816B2F /* hx711_oled_hc08_weight_monitor_ios */ = {
+		1F0F85662E7EC80C00816B2F /* ios_app */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = hx711_oled_hc08_weight_monitor_ios;
+			path = ".";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		1F0F855B2E7EC80C00816B2F = {
 			isa = PBXGroup;
 			children = (
-				1F0F85662E7EC80C00816B2F /* hx711_oled_hc08_weight_monitor_ios */,
+				1F0F85662E7EC80C00816B2F /* ios_app */,
 				1F0F85652E7EC80C00816B2F /* Products */,
 			);
 			sourceTree = "<group>";
