@@ -48,23 +48,47 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     @Published var weeklyAverage: Int = 0   // 单位：克
     @Published var weeklyDrinkData: [Int] = Array(repeating: 0, count: 7) // 过去7天的每日喝水量
     
-    
-    private var centralManager: CBCentralManager!
-    private var foundPeripherals: [CBPeripheral] = []
-    private var targetServiceUUID = CBUUID(string: "FFE0")
-    private var characteristicUUID = CBUUID(string: "FFE1")
+    // 使用新的串口蓝牙管理器
+    private var serialBluetoothManager = SerialBluetoothManager()
     private var jsonBuffer = ""
     private var lastStableObject: String? = nil
     private var persistenceController = PersistenceController.shared
     
     // 杯子重量相关
     private var lastValidWeight: Int? = nil // 上次有效的重量记录
-
+    
     override init() {
         super.init()
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        setupSerialBluetoothManager()
     }
-
+    
+    private func setupSerialBluetoothManager() {
+        // 监听串口蓝牙管理器的状态变化
+        serialBluetoothManager.$isConnected
+            .assign(to: &$isConnected)
+        
+        serialBluetoothManager.$receivedData
+            .sink { [weak self] data in
+                self?.processReceivedData(data)
+            }
+            .store(in: &cancellables)
+        
+        serialBluetoothManager.$errorMessage
+            .assign(to: &$errorMessage)
+        
+        serialBluetoothManager.$connectedDeviceName
+            .sink { [weak self] deviceName in
+                if let name = deviceName {
+                    self?.connectedDevice = BluetoothDevice(name: name, peripheral: CBPeripheral())
+                } else {
+                    self?.connectedDevice = nil
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private var cancellables = Set<AnyCancellable>()
+    
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         print("蓝牙状态更新: \(central.state.rawValue)")
         switch central.state {
@@ -106,9 +130,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         }
         
         devices.removeAll()
-        foundPeripherals.removeAll()
         errorMessage = nil
-        centralManager.scanForPeripherals(withServices: nil, options: nil)
+        serialBluetoothManager.startScan()
     }
     
     // 自动连接HC-08
@@ -122,15 +145,12 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         errorMessage = "正在搜索 HC-08..."
         
         devices.removeAll()
-        foundPeripherals.removeAll()
-        
-        // 扫描设备，寻找HC-08
-        centralManager.scanForPeripherals(withServices: nil, options: nil)
+        serialBluetoothManager.startScan()
         
         // 设置超时，10秒后停止扫描
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
             if self.isConnecting {
-                self.centralManager.stopScan()
+                self.serialBluetoothManager.stopScan()
                 self.isConnecting = false
                 self.errorMessage = "找不到 HC-08，请开启客户端"
             }
@@ -138,8 +158,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        guard !foundPeripherals.contains(peripheral) else { return }
-        foundPeripherals.append(peripheral)
+        guard !devices.contains(where: { $0.peripheral == peripheral }) else { return }
         let name = peripheral.name ?? "未知设备"
         let device = BluetoothDevice(name: name, peripheral: peripheral)
         DispatchQueue.main.async {
@@ -147,32 +166,28 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
             
             // 如果正在自动连接且找到HC-08，立即连接
             if self.isConnecting && name == "HC-08" {
-                self.centralManager.stopScan()
-                self.connectToDevice(device)
+                self.serialBluetoothManager.stopScan()
+                self.serialBluetoothManager.connect(to: peripheral)
             }
         }
     }
     
     // 连接设备
     func connectToDevice(_ device: BluetoothDevice) {
-        centralManager.stopScan()
-        device.peripheral.delegate = self
-        centralManager.connect(device.peripheral, options: nil)
+        serialBluetoothManager.stopScan()
+        serialBluetoothManager.connect(to: device.peripheral)
         errorMessage = "正在连接..."
         isConnecting = true
     }
     
     // 断开连接
     func disconnect() {
-        if let peripheral = connectedDevice?.peripheral {
-            centralManager.cancelPeripheralConnection(peripheral)
-        }
+        serialBluetoothManager.disconnect()
     }
     
     // 连接成功
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         print("连接成功: \(peripheral.name ?? "未知设备")")
-        peripheral.discoverServices([targetServiceUUID])
         DispatchQueue.main.async {
             self.connectedDevice = self.devices.first { $0.peripheral == peripheral }
             self.isConnected = true
@@ -216,9 +231,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         if let services = peripheral.services {
             for service in services {
                 print("发现服务: \(service.uuid)")
-                if service.uuid == targetServiceUUID {
-                    peripheral.discoverCharacteristics([characteristicUUID], for: service)
-                }
+                peripheral.discoverCharacteristics(nil, for: service)
             }
         }
     }
@@ -233,11 +246,9 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         if let characteristics = service.characteristics {
             for characteristic in characteristics {
                 print("发现特征: \(characteristic.uuid)")
-                if characteristic.uuid == characteristicUUID {
-                    // 订阅特征以接收数据
-                    peripheral.setNotifyValue(true, for: characteristic)
-                    print("已订阅特征接收数据")
-                }
+                // 订阅特征以接收数据
+                peripheral.setNotifyValue(true, for: characteristic)
+                print("已订阅特征接收数据")
             }
         }
     }
@@ -310,6 +321,78 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
                         print("清除JSON部分，剩余缓冲区长度: \(self.jsonBuffer.count)")
                     }
                 }
+            }
+        }
+    }
+    
+    // 处理串口接收到的数据
+    private func processReceivedData(_ data: String) {
+        print("处理串口数据: \(data)")
+        
+        // 将接收到的字符串添加到缓冲区
+        jsonBuffer += data
+        
+        // 限制缓冲区大小，防止内存问题
+        if jsonBuffer.count > 1000 {
+            print("缓冲区过大，清空缓冲区")
+            jsonBuffer = ""
+        }
+        
+        // 尝试解析Arduino发送的数据格式
+        // Arduino发送格式示例：
+        // Weight: 100 g
+        // Status: Stable
+        // Object: Detected
+        
+        let lines = data.components(separatedBy: .newlines)
+        var weight: Int?
+        var status: String?
+        var object: String?
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if trimmedLine.hasPrefix("Weight:") {
+                let components = trimmedLine.components(separatedBy: " ")
+                if components.count >= 2 {
+                    weight = Int(components[1])
+                }
+            } else if trimmedLine.hasPrefix("Status:") {
+                let components = trimmedLine.components(separatedBy: " ")
+                if components.count >= 2 {
+                    status = components[1]
+                }
+            } else if trimmedLine.hasPrefix("Object:") {
+                let components = trimmedLine.components(separatedBy: " ")
+                if components.count >= 2 {
+                    object = components[1]
+                }
+            }
+        }
+        
+        // 如果解析到完整的数据，创建WeightData
+        if let weight = weight, let status = status, let object = object {
+            let weightData = WeightData(weight: weight, status: status, object: object, time: 0, system: "Arduino")
+            latestWeightData = weightData
+            
+            print("解析数据: weight=\(weight), status=\(status), object=\(object)")
+            
+            // 只记录stable状态且第一次的数据，并且重量要大于10g
+            if status == "Stable" && lastStableObject != object && weight >= 10 {
+                print("保存记录: 符合条件，开始保存")
+                saveWeightRecord(weight: weight, status: status, object: object)
+                lastStableObject = object
+                print("保存记录: 完成，开始加载记录")
+                loadRecentRecords()
+                print("保存记录: 开始计算统计")
+                calculateDrinkStatistics()
+                print("保存记录: 全部完成")
+            } else if status != "Stable" {
+                // 如果状态不是stable，重置lastStableObject
+                print("重置状态: 状态不是Stable")
+                lastStableObject = nil
+            } else {
+                print("跳过记录: 不满足保存条件")
             }
         }
     }
