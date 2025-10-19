@@ -16,8 +16,8 @@
     - HX711的GND连接到Arduino GND
     - OLED的VCC连接到Arduino 5V
     - OLED的GND连接到Arduino GND
-    - OLED的SCL连接到Arduino SCL (专用I2C时钟线)
-    - OLED的SDA连接到Arduino SDA (专用I2C数据线)
+    - OLED的SCL连接到Arduino A5 (I2C时钟线)
+    - OLED的SDA连接到Arduino A4 (I2C数据线)
     - HC-08的VCC连接到Arduino 5V
     - HC-08的GND连接到Arduino GND
     - HC-08的TXD连接到Arduino引脚0 (RX)
@@ -36,6 +36,10 @@
 #define SCREEN_HEIGHT 32
 #define OLED_RESET -1
 #define SCREEN_ADDRESS 0x3C
+
+// OLED I2C端口定义
+#define OLED_SDA A4  // I2C数据线
+#define OLED_SCL A5  // I2C时钟线
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -105,6 +109,7 @@ void setup() {
   
   Serial.println("=== HX711 Monitor Start ===");
   Serial.println("HX711: SCK=10, DT=11");
+  Serial.println("OLED: SDA=A4, SCL=A5");
   Serial.println("HC-08: RX=0, TX=1");
   Serial.println("Weight Factor: 430");
   Serial.println("Bluetooth: 9600");
