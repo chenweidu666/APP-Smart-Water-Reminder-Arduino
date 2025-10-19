@@ -27,7 +27,12 @@ struct DrinkRecord: Identifiable {
 struct BluetoothDevice: Identifiable {
     let id = UUID()
     let name: String
-    let peripheral: CBPeripheral
+    let peripheral: CBPeripheral?
+    
+    init(name: String, peripheral: CBPeripheral? = nil) {
+        self.name = name
+        self.peripheral = peripheral
+    }
 }
 
 class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -79,7 +84,7 @@ class BluetoothViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, 
         serialBluetoothManager.$connectedDeviceName
             .sink { [weak self] deviceName in
                 if let name = deviceName {
-                    self?.connectedDevice = BluetoothDevice(name: name, peripheral: CBPeripheral())
+                    self?.connectedDevice = BluetoothDevice(name: name)
                 } else {
                     self?.connectedDevice = nil
                 }
