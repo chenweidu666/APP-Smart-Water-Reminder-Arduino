@@ -4,3 +4,4 @@ libraries/
 *.tmp
 *.bak
 *.log
+.accelerate/
